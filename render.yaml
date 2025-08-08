@@ -1,0 +1,39 @@
+services:
+  # Backend API Service
+  - type: web
+    name: travelai-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_API_BASE
+        value: https://openrouter.ai/api/v1
+      - key: TOMTOM_API_KEY
+        sync: false
+      - key: PIXABAY_API_KEY
+        sync: false
+      - key: WEATHER_API_KEY
+        sync: false
+      - key: TRAVELPAYOUTS_API_KEY
+        sync: false
+      - key: TRAVELPAYOUTS_AFFILIATE_ID
+        sync: false
+
+  # Frontend Static Site
+  - type: web
+    name: travelai-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/build
+    envVars:
+      - key: REACT_APP_API_BASE_URL
+        value: https://travelai-backend.onrender.com/api
+
