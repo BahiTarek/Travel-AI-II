@@ -132,11 +132,22 @@ app.get('/api/images/:query', async (req, res) => {
 });
 
 // WeatherAPI endpoint
+// WeatherAPI endpoint - updated with better error handling
 app.get('/api/weather/:location', async (req, res) => {
   try {
+    setHeaders(res);
     const { location } = req.params;
     const { days = 7 } = req.query;
     
+    // Skip if no API key
+    if (!process.env.WEATHER_API_KEY) {
+      return res.json({
+        success: true,
+        weather: null,
+        message: 'Weather service not configured'
+      });
+    }
+
     const response = await axios.get('http://api.weatherapi.com/v1/forecast.json', {
       params: {
         key: process.env.WEATHER_API_KEY,
@@ -144,7 +155,8 @@ app.get('/api/weather/:location', async (req, res) => {
         days: days,
         aqi: 'no',
         alerts: 'no'
-      }
+      },
+      timeout: 5000 // 5 second timeout
     });
 
     const weather = {
@@ -167,9 +179,12 @@ app.get('/api/weather/:location', async (req, res) => {
     });
   } catch (error) {
     console.error('WeatherAPI Error:', error.response?.data || error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch weather data'
+    setHeaders(res);
+    // Return success even if weather fails
+    res.json({
+      success: true,
+      weather: null,
+      message: 'Weather data unavailable'
     });
   }
 });

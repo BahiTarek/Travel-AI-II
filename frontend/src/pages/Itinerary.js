@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Sparkles, Clock, Sun, Cloud, CloudRain, Loader } from 'lucide-react';
 import axios from 'axios';
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://travel-ai-ii.onrender.com';
 
 const Itinerary = () => {
   const [searchParams] = useSearchParams();
@@ -25,36 +24,64 @@ const Itinerary = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.destination || !formData.startDate || !formData.endDate) {
-      setError('Please fill in all required fields');
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!formData.destination || !formData.startDate || !formData.endDate) {
+    setError('Please fill in all required fields');
+    return;
+  }
 
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError('');
 
-    const baseUrl = API_BASE_URL.endsWith('/')
-  ? API_BASE_URL.slice(0, -1)
-  : API_BASE_URL;
-
-    try {
-  const response = await axios.post(`${baseUrl}/api/generate-itinerary`, {
-       destination: formData.destination,
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/generate-itinerary`,
+      {
+        destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
         preferences: formData.preferences
-      });
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000 // 30 second timeout
+      }
+    );
 
-      setItinerary(response.data);
-    } catch (error) {
-      console.error('Itinerary generation error:', error);
-      setError('Failed to generate itinerary. Please make sure the backend server is running and try again.');
-    } finally {
-      setLoading(false);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Failed to generate itinerary');
     }
-  };
+
+    setItinerary(response.data);
+  } catch (error) {
+    console.error('Full error:', error);
+    console.error('Error response:', error.response);
+    
+    let errorMessage = 'Failed to generate itinerary. Please try again.';
+    
+    if (error.response) {
+      // Handle HTTP error responses
+      if (error.response.status === 404) {
+        errorMessage = 'Itinerary service not found. Please contact support.';
+      } else if (error.response.status === 500) {
+        errorMessage = 'Server error. Our team has been notified.';
+      } else if (error.response.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+    } else if (error.message.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getWeatherIcon = (condition) => {
     if (condition?.text?.toLowerCase().includes('sun') || condition?.text?.toLowerCase().includes('clear')) {
