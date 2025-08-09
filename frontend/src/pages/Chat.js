@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader } from 'lucide-react';
 import axios from 'axios';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 
 const Chat = () => {
   const [messages, setMessages] = useState([
@@ -89,7 +91,7 @@ const Chat = () => {
       }
 
       // Regular AI chat
-      const response = await axios.post('http://localhost:5000/api/chat', {
+  const response = await axios.post(`${baseUrl}/api/chat`, {
         message: inputMessage,
         conversation: messages.filter(msg => msg.type !== 'system').map(msg => ({
           role: msg.type === 'user' ? 'user' : 'assistant',
