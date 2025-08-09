@@ -34,7 +34,7 @@ const Itinerary = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/generate-itinerary', {
+const response = await axios.post('https://travel-ai-ii.onrender.com/api/generate-itinerary', {
         destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
