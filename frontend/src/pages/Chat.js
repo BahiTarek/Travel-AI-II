@@ -90,6 +90,10 @@ const Chat = () => {
         return;
       }
 
+        const baseUrl = API_BASE_URL.endsWith('/')
+  ? API_BASE_URL.slice(0, -1)
+  : API_BASE_URL;
+
       // Regular AI chat
   const response = await axios.post(`${baseUrl}/api/chat`, {
         message: inputMessage,
