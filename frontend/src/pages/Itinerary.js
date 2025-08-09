@@ -35,10 +35,13 @@ const Itinerary = () => {
     setLoading(true);
     setError('');
 
-    try {
-const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+    const baseUrl = API_BASE_URL.endsWith('/')
+  ? API_BASE_URL.slice(0, -1)
+  : API_BASE_URL;
 
-const response = await axios.post(`${baseUrl}/api/generate-itinerary`, {        destination: formData.destination,
+    try {
+  const response = await axios.post(`${baseUrl}/api/generate-itinerary`, {
+       destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
         preferences: formData.preferences
