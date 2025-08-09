@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Sparkles, Clock, Sun, Cloud, CloudRain, Loader } from 'lucide-react';
 import axios from 'axios';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 
 const Itinerary = () => {
   const [searchParams] = useSearchParams();
@@ -34,7 +36,7 @@ const Itinerary = () => {
     setError('');
 
     try {
-const response = await axios.post('https://travel-ai-ii.onrender.com/api/generate-itinerary', {
+      const response = await axios.post(`${API_BASE_URL}/api/generate-itinerary`, {
         destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
