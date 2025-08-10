@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Plane } from 'lucide-react';
+import '../index.css';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

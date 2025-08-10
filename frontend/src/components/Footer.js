@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plane, Mail, Phone, MapPin } from 'lucide-react';
+import '../index.css';
 
 const Footer = () => {
   return (
