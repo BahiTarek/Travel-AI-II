@@ -35,6 +35,8 @@
   "homepage": "https://github.com/your-username/travel-consultant-ai#readme",
   "devDependencies": {
     "concurrently": "^7.6.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5"
   }
 }
-
