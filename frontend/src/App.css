@@ -36,3 +36,19 @@
     transform: rotate(360deg);
   }
 }
+
+/* Smooth transitions for interactive elements */
+button, a, input, .card {
+  transition: all 0.2s ease-out;
+}
+
+/* Hover effects */
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}

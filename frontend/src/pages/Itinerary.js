@@ -243,160 +243,76 @@ const Itinerary = () => {
         </div>
 
         {/* Results Section */}
-        {itinerary && (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Destination Images */}
-            {itinerary.images?.length > 0 && (
-              <div className="card p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Discover {itinerary.destination || formData.destination}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {itinerary.images.slice(0, 6).map((image, index) => (
-                    <div key={index} className="relative group rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-                      <img
-                        src={image.url || image.preview}
-                        alt={image.tags || `Image of ${formData.destination}`}
-                        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 text-white">
-                        <p className="font-medium">{image.tags?.split(',')[0] || 'Travel Image'}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Weather Forecast */}
-            {itinerary.weather && (
-              <div className="card p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Weather Forecast
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2">
-                  {itinerary.weather.forecast?.map((day, index) => (
-                    <div key={index} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-600 mb-1">
-                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                      </p>
-                      <div className="my-2">
-                        {getWeatherIcon(day.day?.condition)}
-                      </div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        {day.day?.condition?.text || 'N/A'}
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {day.day?.maxtemp_c ? Math.round(day.day.maxtemp_c) : 'N'}°/
-                        {day.day?.mintemp_c ? Math.round(day.day.mintemp_c) : 'N'}°C
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Daily Itinerary */}
-            {itinerary.itinerary?.days?.length > 0 && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Your Daily Itinerary
-                </h2>
-                
-                {itinerary.itinerary.days.map((day, index) => (
-                  <div key={index} className="card p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">
-                          Day {day.day}: {day.title}
-                        </h3>
-                        <p className="text-gray-600">{formatDate(day.date)}</p>
-                      </div>
-                      {itinerary.weather?.forecast?.[index] && (
-                        <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                          {getWeatherIcon(itinerary.weather.forecast[index].day?.condition)}
-                          <span>
-                            {itinerary.weather.forecast[index].day?.maxtemp_c 
-                              ? Math.round(itinerary.weather.forecast[index].day.maxtemp_c) 
-                              : 'N'}°C
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      {day.activities?.map((activity, actIndex) => (
-                        <div key={actIndex} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex-shrink-0 pt-1">
-                            <Clock className="h-5 w-5 text-blue-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                              <span className="text-sm font-medium text-blue-600">
-                                {activity.time}
-                              </span>
-                              {activity.location && (
-                                <>
-                                  <span className="hidden sm:block text-sm text-gray-400">•</span>
-                                  <span className="text-sm text-gray-600 truncate">
-                                    {activity.location}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                            <p className="text-gray-900 whitespace-pre-line">
-                              {activity.activity}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Attractions */}
-            {itinerary.attractions?.length > 0 && (
-              <div className="card p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Recommended Attractions
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {itinerary.attractions.slice(0, 9).map((attraction, index) => (
-                    <div key={index} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <h3 className="font-semibold text-gray-900 mb-2 truncate">
-                        {attraction.name}
-                      </h3>
-                      {attraction.address && (
-                        <p className="text-sm text-gray-600 mb-2 truncate">
-                          {attraction.address}
-                        </p>
-                      )}
-                      {attraction.categories?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {attraction.categories.slice(0, 3).map((category, catIndex) => (
-                            <span
-                              key={catIndex}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                            >
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+       {itinerary && (
+  <div className="space-y-8">
+    {/* Destination Header */}
+    <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 text-white">
+      <h2 className="text-2xl font-bold">Your {tripDuration()}-Day Trip to {formData.destination}</h2>
+      <p className="opacity-90">Generated on {new Date().toLocaleDateString()}</p>
     </div>
-  );
-};
+
+    {/* Daily Itinerary */}
+    <div className="space-y-6">
+      {itinerary.days?.map((day) => (
+        <div key={day.day} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <div className="bg-gradient-to-r from-primary/90 to-primary/70 p-4 text-white">
+            <h3 className="text-xl font-bold">Day {day.day}: {day.title}</h3>
+            <p className="text-sm opacity-90">
+              {new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            {day.activities?.map((activity, index) => (
+              <div key={index} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className={`flex-shrink-0 mt-1 w-2 h-2 rounded-full ${index === 0 ? 'bg-accent' : 'bg-secondary'}`}></div>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span className="font-medium">{activity.time}</span>
+                    {activity.location && (
+                      <>
+                        <span className="text-gray-300">•</span>
+                        <MapPin className="h-4 w-4" />
+                        <span>{activity.location}</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-1 text-gray-800">{activity.activity}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Attractions Section */}
+    {itinerary.attractions?.length > 0 && (
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Recommended Attractions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {itinerary.attractions.slice(0, 6).map((attraction) => (
+            <div key={attraction.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <h4 className="font-semibold text-gray-900">{attraction.name}</h4>
+              {attraction.address && (
+                <p className="text-sm text-gray-600 mt-1">{attraction.address}</p>
+              )}
+              {attraction.categories?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {attraction.categories.slice(0, 3).map((category, i) => (
+                    <span key={i} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                      {category}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
 export default Itinerary;
