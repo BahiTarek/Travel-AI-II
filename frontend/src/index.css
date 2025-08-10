@@ -86,10 +86,60 @@ code {
   box-shadow: 0 0 0 2px rgba(0, 74, 173, 0.2);
 }
 
+/* Default: show desktop nav, hide mobile menu button */
+.desktopNav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.mobileMenuButton {
+  display: none;
+}
+
+/* Small screens: hide desktop nav, show mobile menu button */
+@media (max-width: 768px) {
+  .desktopNav {
+    display: none;
+  }
+  .mobileMenuButton {
+    display: flex;
+    align-items: center;
+  }
+}
+
+
 /* Utility classes */
 .text-primary { color: #004aad; }
 .text-accent { color: #ff6600; }
 .bg-primary { background-color: #004aad; }
 .bg-accent { background-color: #ff6600; }
 .bg-background { background-color: #f4f4f4; }
+
+/* Chat message bubbles */
+.message-bubble {
+  max-width: 70%;
+  word-break: break-word;
+  margin-bottom: 0.5rem;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.user-message {
+  align-self: flex-end;
+  background-color: #004aad;
+  color: #fff;
+}
+.bot-message {
+  align-self: flex-start;
+  background-color: #f3f4f6;
+  color: #222;
+}
+
+/* Fade-in animation for messages */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+.animate-fadeIn {
+  animation: fadeIn 0.5s;
+}
 

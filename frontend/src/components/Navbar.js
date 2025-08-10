@@ -107,27 +107,28 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div style={{ ...desktopNavStyle, '@media (max-width: 768px)': { display: 'none' } }}>
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                style={linkStyle(isActive(item.href))}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
+{/* Desktop Navigation */}
+<div className="desktopNav" style={desktopNavStyle}>
+  {navigation.map((item) => (
+    <Link
+      key={item.name}
+      to={item.href}
+      style={linkStyle(isActive(item.href))}
+    >
+      {item.name}
+    </Link>
+  ))}
+</div>
 
-          {/* Mobile menu button */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              style={mobileButtonStyle}
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+{/* Mobile menu button */}
+<div className="mobileMenuButton">
+  <button
+    onClick={() => setIsOpen(!isOpen)}
+    style={mobileButtonStyle}
+  >
+    {isOpen ? <X size={24} /> : <Menu size={24} />}
+  </button>
+</div>
         </div>
       </div>
 
