@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Sparkles, Clock, Sun, Cloud, CloudRain, Loader, ArrowRight, Star, Camera, Compass } from 'lucide-react';
-import api from '../utils/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import api from '../utils/api'; // Use the centralized API utility
 
 const Itinerary = () => {
   const [searchParams] = useSearchParams();
@@ -17,22 +16,7 @@ const Itinerary = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
+  // Set default dates (today + 7 days)
   useEffect(() => {
     const today = new Date();
     const nextWeek = new Date(today);
@@ -56,11 +40,13 @@ const Itinerary = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!formData.destination || !formData.startDate || !formData.endDate) {
       setError('Please fill in all required fields');
       return;
     }
 
+    // Validate date range
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       setError('End date must be after start date');
       return;
@@ -81,7 +67,7 @@ const Itinerary = () => {
         throw new Error(response.data.error || 'Failed to generate itinerary');
       }
 
-      setItinerary(response.data.data || response.data);
+      setItinerary(response.data.data || response.data); // Handle both response formats
     } catch (error) {
       console.error('Itinerary generation error:', error);
       
@@ -121,6 +107,7 @@ const Itinerary = () => {
     });
   };
 
+  // Calculate trip duration in days
   const tripDuration = () => {
     if (!formData.startDate || !formData.endDate) return 0;
     const start = new Date(formData.startDate);
@@ -130,12 +117,21 @@ const Itinerary = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      {/* Hero Section */}
+      {/* Section Title Bar */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="flex items-center gap-3 bg-blue-50 rounded-2xl px-6 py-4 shadow border border-blue-100">
+          <Compass className="h-6 w-6 text-blue-600" />
+          <span className="text-xl font-bold text-blue-700">Plan Your Trip</span>
+        </div>
+      </div>
+
+      {/* Hero Section with Enhanced Background */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/5 to-teal-600/10"></div>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23e2e8f0%22%20fill-opacity%3D%220.3%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          {/* Header with Enhanced Typography */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-200/50 mb-6">
               <Compass className="h-4 w-4 text-blue-600" />
@@ -156,11 +152,12 @@ const Itinerary = () => {
             </p>
           </div>
 
-          {/* Form Section */}
+          {/* Enhanced Form Section */}
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 lg:p-12">
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 lg:p-12 mb-12">
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Destination Field with Icon */}
                   <div className="lg:col-span-2">
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                       <div className="flex items-center gap-2">
@@ -170,17 +167,21 @@ const Itinerary = () => {
                         Where would you like to go? *
                       </div>
                     </label>
-                    <input
-                      type="text"
-                      name="destination"
-                      value={formData.destination}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Paris, France or Tokyo, Japan"
-                      className="w-full px-6 py-4 text-lg border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder:text-slate-400"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="destination"
+                        value={formData.destination}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Paris, France or Tokyo, Japan"
+                        className="w-full pl-12 pr-6 py-4 text-lg border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder:text-slate-400"
+                        required
+                      />
+                      <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-400" />
+                    </div>
                   </div>
 
+                  {/* Date Fields with Enhanced Design */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                       <div className="flex items-center gap-2">
@@ -220,6 +221,7 @@ const Itinerary = () => {
                     />
                   </div>
 
+                  {/* Travelers Field */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                       <div className="flex items-center gap-2">
@@ -243,6 +245,7 @@ const Itinerary = () => {
                     </select>
                   </div>
 
+                  {/* Preferences Field */}
                   <div className="lg:col-span-2">
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                       <div className="flex items-center gap-2">
@@ -263,6 +266,7 @@ const Itinerary = () => {
                   </div>
                 </div>
 
+                {/* Enhanced Error Display */}
                 {error && (
                   <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
                     <div className="flex items-center gap-3">
@@ -278,6 +282,7 @@ const Itinerary = () => {
                   </div>
                 )}
 
+                {/* Enhanced Submit Button */}
                 <button
                   type="submit"
                   disabled={loading}
@@ -302,165 +307,212 @@ const Itinerary = () => {
         </div>
       </div>
 
-      {/* Results Section */}
+      {/* Divider */}
+      <hr className="my-12 border-t-2 border-blue-100 rounded-full" />
+
+      {/* Results Section with Enhanced Design and Animation */}
       {itinerary && (
-        <motion.div 
-          initial="hidden"
-          animate="show"
-          variants={containerVariants}
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12"
-        >
-          {/* Destination Images */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12 animate-fade-in">
+          {/* Destination Images with Enhanced Gallery */}
           {itinerary.images?.length > 0 && (
-            <motion.div variants={itemVariants} className="bg-white rounded-3xl shadow-xl overflow-hidden">
-              <div className="relative h-64 sm:h-80 lg:h-96 w-full">
-                <img
-                  src={itinerary.images[0].url || itinerary.images[0].preview}
-                  alt={itinerary.images[0].tags || `Image of ${formData.destination}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-                  <h2 className="text-3xl lg:text-4xl font-bold mb-2">
-                    Welcome to {itinerary.destination || formData.destination}
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-200/50 p-8 lg:p-12">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <Camera className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900">
+                    Discover {itinerary.destination || formData.destination}
                   </h2>
-                  <p className="text-lg opacity-90">
-                    Your {tripDuration()}-day adventure starts here
-                  </p>
+                  <p className="text-slate-600 mt-1">Visual highlights of your destination</p>
                 </div>
               </div>
               
-              <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                {itinerary.images.slice(1, 5).map((image, index) => (
-                  <div 
-                    key={index} 
-                    className="aspect-square overflow-hidden rounded-xl hover:scale-105 transition-transform duration-300"
-                  >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {itinerary.images.slice(0, 6).map((image, index) => (
+                  <div key={index} className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02]">
                     <img
                       src={image.url || image.preview}
                       alt={image.tags || `Image of ${formData.destination}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                       loading="lazy"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+                    <div className="absolute bottom-6 left-6 right-6 text-white">
+                      <p className="font-semibold text-lg leading-tight">{image.tags?.split(',')[0] || 'Travel Destination'}</p>
+                      <div className="flex items-center gap-1 mt-2 opacity-90">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span className="text-sm">Featured Location</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
-          {/* Weather Forecast */}
+          {/* Enhanced Weather Forecast */}
           {itinerary.weather && (
-            <motion.div variants={itemVariants} className="bg-white rounded-3xl shadow-xl p-8">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-blue-100 rounded-xl">
-                  <Cloud className="h-6 w-6 text-blue-600" />
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-200/50 p-8 lg:p-12">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-amber-100 rounded-xl">
+                  <Sun className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Weather Forecast</h2>
-                  <p className="text-gray-600">Plan your activities accordingly</p>
+                  <h2 className="text-3xl font-bold text-slate-900">Weather Forecast</h2>
+                  <p className="text-slate-600 mt-1">Plan your activities with confidence</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
                 {itinerary.weather.forecast?.map((day, index) => (
-                  <div 
-                    key={index} 
-                    className="p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 text-center hover:shadow-md transition-all"
-                  >
-                    <p className="font-medium text-gray-700 mb-2">
-                      {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                  <div key={index} className="flex flex-col items-center p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl border border-slate-200/50 hover:shadow-lg transition-all duration-300">
+                    <p className="text-sm font-semibold text-slate-700 mb-3">
+                      {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </p>
-                    <div className="flex justify-center mb-2">
+                    <div className="mb-3 p-2 bg-white rounded-full shadow-sm">
                       {getWeatherIcon(day.day?.condition)}
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-xs text-slate-600 mb-3 text-center leading-tight">
                       {day.day?.condition?.text || 'N/A'}
                     </p>
-                    <div className="flex justify-center gap-2">
-                      <span className="font-bold text-gray-900">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-slate-900">
                         {day.day?.maxtemp_c ? Math.round(day.day.maxtemp_c) : 'N'}°
-                      </span>
-                      <span className="text-gray-500">
+                      </p>
+                      <p className="text-sm text-slate-500">
                         {day.day?.mintemp_c ? Math.round(day.day.mintemp_c) : 'N'}°
-                      </span>
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
-          {/* Daily Itinerary */}
+          {/* Enhanced Daily Itinerary */}
           {itinerary.itinerary?.days?.length > 0 && (
-            <motion.div variants={itemVariants} className="space-y-8">
+            <div className="space-y-8">
               <div className="text-center">
-                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                  Your Personalized Itinerary
-                </h2>
-                <p className="text-xl text-gray-600">
-                  Carefully crafted experiences for each day
-                </p>
+                <h2 className="text-4xl font-bold text-slate-900 mb-4">Your Daily Adventure</h2>
+                <p className="text-xl text-slate-600">Carefully curated experiences for each day</p>
               </div>
               
-              <AnimatePresence>
-                {itinerary.itinerary.days.map((day, index) => (
-                  <motion.div
-                    key={index}
-                    variants={itemVariants}
-                    className="bg-white rounded-3xl shadow-xl overflow-hidden"
-                  >
-                    <div className="p-8 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
-                      <div className="flex items-center gap-4">
-                        <div className="flex-shrink-0 w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
-                          Day {day.day}
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-gray-900">
-                            {day.title}
-                          </h3>
-                          <p className="text-blue-600">
-                            {formatDate(day.date)}
-                          </p>
-                        </div>
+              {itinerary.itinerary.days.map((day, index) => (
+                <div key={index} className="bg-white rounded-3xl shadow-xl border border-slate-200/50 p-8 lg:p-12 hover:shadow-2xl transition-all duration-300">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {day.day}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl lg:text-3xl font-bold text-slate-900 leading-tight">
+                          {day.title}
+                        </h3>
+                        <p className="text-slate-600 text-lg mt-1">{formatDate(day.date)}</p>
                       </div>
                     </div>
                     
-                    <div className="divide-y divide-gray-100">
-                      {day.activities?.map((activity, actIndex) => (
-                        <div key={actIndex} className="p-6 hover:bg-blue-50/50 transition-colors">
-                          <div className="flex gap-4">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Clock className="h-5 w-5 text-blue-600" />
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2 mb-2">
-                                <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                                  {activity.time}
-                                </span>
-                                {activity.location && (
-                                  <span className="inline-flex items-center gap-1 text-gray-600 text-sm">
-                                    <MapPin className="h-4 w-4" />
-                                    {activity.location}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-gray-800 whitespace-pre-line">
-                                {activity.activity}
-                              </p>
-                            </div>
+                    {itinerary.weather?.forecast?.[index] && (
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-3 rounded-2xl border border-slate-200/50">
+                        <div className="p-2 bg-white rounded-full shadow-sm">
+                          {getWeatherIcon(itinerary.weather.forecast[index].day?.condition)}
+                        </div>
+                        <div className="text-center">
+                          <p className="font-semibold text-slate-900">
+                            {itinerary.weather.forecast[index].day?.maxtemp_c 
+                              ? Math.round(itinerary.weather.forecast[index].day.maxtemp_c) 
+                              : 'N'}°C
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            {itinerary.weather.forecast[index].day?.condition?.text || 'Weather'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    {day.activities?.map((activity, actIndex) => (
+                      <div key={actIndex} className="group flex items-start gap-6 p-6 bg-gradient-to-r from-slate-50/50 to-blue-50/30 rounded-2xl border border-slate-200/30 hover:shadow-lg hover:border-blue-200/50 transition-all duration-300">
+                        <div className="flex-shrink-0 pt-1">
+                          <div className="p-3 bg-white rounded-xl shadow-sm group-hover:shadow-md transition-shadow duration-300">
+                            <Clock className="h-5 w-5 text-blue-600" />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+                            <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
+                              {activity.time}
+                            </span>
+                            {activity.location && (
+                              <span className="inline-flex items-center gap-1 text-slate-600 text-sm">
+                                <MapPin className="h-4 w-4" />
+                                {activity.location}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-800 text-lg leading-relaxed whitespace-pre-line">
+                            {activity.activity}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </motion.div>
+
+          {/* Enhanced Attractions */}
+          {itinerary.attractions?.length > 0 && (
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-200/50 p-8 lg:p-12">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-purple-100 rounded-xl">
+                  <Star className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900">Must-Visit Attractions</h2>
+                  <p className="text-slate-600 mt-1">Handpicked destinations for your journey</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {itinerary.attractions.slice(0, 9).map((attraction, index) => (
+                  <div key={index} className="group p-6 border-2 border-slate-200 rounded-2xl hover:border-blue-300 hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-slate-50">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="font-bold text-slate-900 text-lg leading-tight group-hover:text-blue-600 transition-colors duration-300">
+                        {attraction.name}
+                      </h3>
+                      <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-300">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                      </div>
+                    </div>
+                    
+                    {attraction.address && (
+                      <p className="text-slate-600 mb-4 text-sm leading-relaxed">
+                        {attraction.address}
+                      </p>
+                    )}
+                    
+                    {attraction.categories?.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {attraction.categories.slice(0, 3).map((category, catIndex) => (
+                          <span
+                            key={catIndex}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors duration-300"
+                          >
+                            {category}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
