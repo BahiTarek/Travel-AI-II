@@ -6,14 +6,30 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enhanced CORS configuration
+const allowedOrigins = [
+  'https://travelai-frontend-0bp4.onrender.com', // Your live frontend
+  'http://localhost:3000' // Local development
+];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200
+  credentials: true,
+  optionsSuccessStatus: 204
 };
+
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable preflight for all routes
 app.use(express.json());
 
 // Improved header middleware
@@ -23,6 +39,23 @@ const setHeaders = (res) => {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 };
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, OPTIONS'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization'
+  );
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -297,12 +330,15 @@ app.post('/api/generate-itinerary', async (req, res) => {
       weather: null
     };
 
+   const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://travel-ai-ii.onrender.com'
+      : `http://localhost:${PORT}`;
+
     try {
-      // Parallel API calls with error handling
       const [attractions, images, weather] = await Promise.allSettled([
-        axios.get(`http://localhost:${PORT}/api/attractions/${destination}`, { params: { limit: 15 } }),
-        axios.get(`http://localhost:${PORT}/api/images/${destination}`, { params: { per_page: 12 } }),
-        axios.get(`http://localhost:${PORT}/api/weather/${destination}`, { params: { days: tripDays } })
+        axios.get(`${baseUrl}/api/attractions/${destination}`, { params: { limit: 15 } }),
+        axios.get(`${baseUrl}/api/images/${destination}`, { params: { per_page: 12 } }),
+        axios.get(`${baseUrl}/api/weather/${destination}`, { params: { days: tripDays } })
       ]);
 
       // Process responses
