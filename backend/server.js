@@ -7,21 +7,25 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL,  // e.g. https://travelai-frontend-0bp4.onrender.com
-  'http://localhost:3000'    // for local dev
+  'https://travelai-frontend-0bp4.onrender.com', // Your live frontend
+  'http://localhost:3000' // Local development
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
