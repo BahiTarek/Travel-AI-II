@@ -453,17 +453,17 @@ html {
 .message {
   display: flex;
   margin-bottom: 1.25rem;
-  max-width: 80%;
+  max-width: 85%;
+  align-items: flex-start;
 }
 
 .user-message {
   margin-left: auto;
-  justify-content: flex-end;
+  flex-direction: row-reverse;
 }
 
 .bot-message {
   margin-right: auto;
-  justify-content: flex-start;
 }
 
 .message-content {
@@ -479,6 +479,8 @@ html {
   background: #4f46e5;
   color: white;
   border-top-right-radius: 0.25rem;
+  margin-left: 0.75rem;
+  margin-right: 0;
 }
 
 .bot-message .message-content {
@@ -487,8 +489,42 @@ html {
   border: 1px solid #e5e7eb;
   border-top-left-radius: 0.25rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-right: 0.75rem;
 }
 
+/* Improved bot message formatting */
+.bot-message .message-content ul {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.bot-message .message-content li {
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+.bot-message .message-content li:before {
+  content: "•";
+  color: #8b5cf6;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.bot-message .message-content p {
+  margin-bottom: 0.75rem;
+}
+
+.bot-message .message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.bot-message .message-content strong {
+  color: #4f46e5;
+}
+
+/* Avatar alignment */
 .message-avatar {
   width: 2.5rem;
   height: 2.5rem;
@@ -497,17 +533,21 @@ html {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin: 0 0.75rem;
+  margin-top: 0.25rem;
 }
 
 .user-message .message-avatar {
   background: #6366f1;
   color: white;
+  margin-left: 0.75rem;
+  margin-right: 0;
 }
 
 .bot-message .message-avatar {
   background: #8b5cf6;
   color: white;
+  margin-right: 0.75rem;
+  margin-left: 0;
 }
 
 /* --- Input Area --- */

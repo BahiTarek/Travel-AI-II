@@ -91,6 +91,22 @@ const Chat = () => {
     }
   };
 
+  const formatBotResponse = (text) => {
+  // Convert numbered lists to proper HTML
+  text = text.replace(/(Day \d+:.*?)(?=Day \d+:|$)/gs, (match) => {
+    return `<div class="day-section"><strong>${match.split(':')[0]}:</strong> ${match.split(':').slice(1).join(':').trim()}</div>`;
+  });
+  
+  // Convert line breaks to paragraphs
+  text = text.replace(/\n\n+/g, '</p><p>');
+  text = `<p>${text}</p>`;
+  
+  // Convert dashes or asterisks to bullet points
+  text = text.replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>');
+  
+  return text;
+};
+
   const quickActions = [
     { text: 'Find flights', action: () => window.location.href = '/search?type=flights' },
     { text: 'Search hotels', action: () => window.location.href = '/search?type=hotels' },
@@ -130,41 +146,47 @@ const Chat = () => {
       {/* Messages */}
       <div className="messages-container">
         {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`message ${message.type === 'user' ? 'user-message' : 'bot-message'}`}
-          >
-            <div className="message-avatar">
-              {message.type === 'user' ? (
-                <User size={16} />
-              ) : (
-                <Bot size={16} />
-              )}
-            </div>
-            <div>
-              <div className={`message-content ${message.type === 'user' ? 'user-message-content' : 'bot-message-content'}`}>
-                {message.content}
-              </div>
-              <div className="message-timestamp">{message.timestamp}</div>
-            </div>
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="message bot-message">
-            <div className="message-avatar">
-              <Bot size={16} />
-            </div>
-            <div className="loading-indicator">
-              <div className="loading-dots">
-                <div className="loading-dot"></div>
-                <div className="loading-dot"></div>
-                <div className="loading-dot"></div>
-              </div>
-              <span>Thinking...</span>
-            </div>
-          </div>
-        )}
+  <div
+    key={message.id}
+    className={`message ${message.type === 'user' ? 'user-message' : 'bot-message'}`}
+  >
+    {message.type === 'bot' && (
+      <div className="message-avatar">
+        <Bot size={16} />
+      </div>
+    )}
+    <div className="message-content">
+      {message.type === 'bot' && typeof message.content === 'string' ? (
+        <div dangerouslySetInnerHTML={{
+          __html: formatBotResponse(message.content)
+        }} />
+      ) : (
+        message.content
+      )}
+      <div className="message-timestamp">
+        {message.timestamp}
+      </div>
+    </div>
+    {message.type === 'user' && (
+      <div className="message-avatar">
+        <User size={16} />
+      </div>
+    )}
+  </div>
+))}
+
+{isLoading && (
+  <div className="message bot-message">
+    <div className="message-avatar">
+      <Bot size={16} />
+    </div>
+    <div className="typing-indicator">
+      <div className="typing-dot"></div>
+      <div className="typing-dot"></div>
+      <div className="typing-dot"></div>
+    </div>
+  </div>
+)}
         <div ref={messagesEndRef} />
       </div>
 
