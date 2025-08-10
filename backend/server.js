@@ -330,9 +330,16 @@ app.post('/api/generate-itinerary', async (req, res) => {
       weather: null
     };
 
-   const baseUrl = process.env.NODE_ENV === 'production'
-      ? 'https://travel-ai-ii.onrender.com'
-      : `http://localhost:${PORT}`;
+  const getBaseUrl = () => {
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  return process.env.NODE_ENV === 'production' 
+    ? 'https://travel-ai-ii.onrender.com' 
+    : `http://localhost:${PORT}`;
+};
+
+const baseUrl = getBaseUrl();
 
     try {
       const [attractions, images, weather] = await Promise.allSettled([
