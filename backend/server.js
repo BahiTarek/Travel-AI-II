@@ -299,7 +299,7 @@ app.get('/api/flights', async (req, res) => {
 });
 
 // Enhanced Itinerary Generator endpoint with CORS fixes
-app.post('/api/generate-itinerary', async (req, res) => {
+app.post('/api/itinerary', async (req, res) => {
   try {
     setHeaders(res);
     const { destination, startDate, endDate, preferences } = req.body;

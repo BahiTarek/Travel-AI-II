@@ -56,7 +56,7 @@ const Itinerary = () => {
     setError('');
 
     try {
-      const response = await api.post('/generate-itinerary', {
+      const response = await api.post('/itinerary', {
         destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
