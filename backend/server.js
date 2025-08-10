@@ -11,6 +11,7 @@ const allowedOrigins = [
   'http://localhost:3000' // Local development
 ];
 
+// Enhanced CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -23,11 +24,12 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
   optionsSuccessStatus: 204
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Enable preflight for all routes
 app.use(express.json());
@@ -40,6 +42,7 @@ const setHeaders = (res) => {
   res.setHeader('Expires', '0');
 };
 
+// Additional headers middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -51,7 +54,7 @@ app.use((req, res, next) => {
   );
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type, Authorization'
+    'Content-Type, Authorization, X-Requested-With'
   );
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   next();
@@ -72,7 +75,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Enhanced OpenRouter AI Chat endpoint
+// Enhanced OpenRouter AI Chat endpoint (unchanged)
 app.post('/api/chat', async (req, res) => {
   try {
     setHeaders(res);
@@ -124,7 +127,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// TomTom Places Search endpoint
+// TomTom Places Search endpoint (unchanged)
 app.get('/api/attractions/:location', async (req, res) => {
   try {
     const { location } = req.params;
@@ -162,7 +165,7 @@ app.get('/api/attractions/:location', async (req, res) => {
   }
 });
 
-// Pixabay Images Search endpoint
+// Pixabay Images Search endpoint (unchanged)
 app.get('/api/images/:query', async (req, res) => {
   try {
     const { query } = req.params;
@@ -202,8 +205,7 @@ app.get('/api/images/:query', async (req, res) => {
   }
 });
 
-// WeatherAPI endpoint
-// WeatherAPI endpoint - updated with better error handling
+// WeatherAPI endpoint (unchanged)
 app.get('/api/weather/:location', async (req, res) => {
   try {
     setHeaders(res);
@@ -260,7 +262,7 @@ app.get('/api/weather/:location', async (req, res) => {
   }
 });
 
-// Travelpayouts Flight Search endpoint
+// Travelpayouts Flight Search endpoint (unchanged)
 app.get('/api/flights', async (req, res) => {
   try {
     const { origin, destination, departure_date, return_date, currency = 'USD' } = req.query;
@@ -296,8 +298,7 @@ app.get('/api/flights', async (req, res) => {
   }
 });
 
-// Travelpayouts Hotel Search endpoint
-// Generate Itinerary endpoint - with improved error handling
+// Enhanced Itinerary Generator endpoint with CORS fixes
 app.post('/api/generate-itinerary', async (req, res) => {
   try {
     setHeaders(res);
@@ -330,22 +331,31 @@ app.post('/api/generate-itinerary', async (req, res) => {
       weather: null
     };
 
-  const getBaseUrl = () => {
-  if (process.env.RENDER_EXTERNAL_URL) {
-    return process.env.RENDER_EXTERNAL_URL;
-  }
-  return process.env.NODE_ENV === 'production' 
-    ? 'https://travel-ai-ii.onrender.com' 
-    : `http://localhost:${PORT}`;
-};
+    const getBaseUrl = () => {
+      if (process.env.RENDER_EXTERNAL_URL) {
+        return process.env.RENDER_EXTERNAL_URL;
+      }
+      return process.env.NODE_ENV === 'production' 
+        ? 'https://travel-ai-ii.onrender.com' 
+        : `http://localhost:${PORT}`;
+    };
 
-const baseUrl = getBaseUrl();
+    const baseUrl = getBaseUrl();
 
     try {
       const [attractions, images, weather] = await Promise.allSettled([
-        axios.get(`${baseUrl}/api/attractions/${destination}`, { params: { limit: 15 } }),
-        axios.get(`${baseUrl}/api/images/${destination}`, { params: { per_page: 12 } }),
-        axios.get(`${baseUrl}/api/weather/${destination}`, { params: { days: tripDays } })
+        axios.get(`${baseUrl}/api/attractions/${encodeURIComponent(destination)}`, { 
+          params: { limit: 15 },
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }),
+        axios.get(`${baseUrl}/api/images/${encodeURIComponent(destination)}`, { 
+          params: { per_page: 12 },
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }),
+        axios.get(`${baseUrl}/api/weather/${encodeURIComponent(destination)}`, { 
+          params: { days: tripDays },
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
       ]);
 
       // Process responses
@@ -381,7 +391,7 @@ const baseUrl = getBaseUrl();
 // Single server listener
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`CORS configured for: ${corsOptions.origin}`);
+  console.log(`CORS configured for: ${allowedOrigins.join(', ')}`);
   console.log('Available services:');
   console.log(`- OpenRouter: ${!!process.env.OPENROUTER_API_KEY ? 'Enabled' : 'Disabled'}`);
   console.log(`- TomTom: ${!!process.env.TOMTOM_API_KEY ? 'Enabled' : 'Disabled'}`);
