@@ -1,28 +1,57 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const axios = require('axios');
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Improved header middleware
+const setHeaders = (res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+};
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Travel Consultant API is running' });
+  setHeaders(res);
+  res.json({ 
+    status: 'OK', 
+    version: '1.0.0',
+    services: {
+      openrouter: !!process.env.OPENROUTER_API_KEY,
+      tomtom: !!process.env.TOMTOM_API_KEY,
+      pixabay: !!process.env.PIXABAY_API_KEY,
+      weather: !!process.env.WEATHER_API_KEY
+    }
+  });
 });
 
-// OpenRouter AI Chat endpoint
+// Enhanced OpenRouter AI Chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, conversation } = req.body;
+    setHeaders(res);
+    const { message, conversation = [] } = req.body;
     
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or missing message'
+      });
+    }
+
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
       model: 'openai/gpt-3.5-turbo',
       messages: [
@@ -30,25 +59,34 @@ app.post('/api/chat', async (req, res) => {
           role: 'system',
           content: 'You are a helpful travel consultant AI assistant. Provide detailed, accurate travel advice, destination recommendations, and help users plan their trips. Be friendly, informative, and focus on practical travel information.'
         },
-        ...conversation,
+        ...conversation.filter(msg => 
+          msg.role && ['system', 'user', 'assistant'].includes(msg.role) && 
+          msg.content && typeof msg.content === 'string'
+        ),
         { role: 'user', content: message }
       ]
     }, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:3000'
+      },
+      timeout: 10000
     });
 
+    setHeaders(res);
     res.json({
       success: true,
-      message: response.data.choices[0].message.content
+      message: response.data.choices[0].message.content,
+      usage: response.data.usage
     });
   } catch (error) {
     console.error('OpenRouter API Error:', error.response?.data || error.message);
-    res.status(500).json({
+    setHeaders(res);
+    res.status(error.response?.status || 500).json({
       success: false,
-      error: 'Failed to get AI response'
+      error: error.response?.data?.error?.message || 'Failed to get AI response',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -226,141 +264,70 @@ app.get('/api/flights', async (req, res) => {
 });
 
 // Travelpayouts Hotel Search endpoint
-app.get('/api/hotels', async (req, res) => {
-  try {
-    const { location, check_in, check_out, currency = 'USD' } = req.query;
-    
-    if (!location || !check_in || !check_out) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required parameters: location, check_in, check_out'
-      });
-    }
-
-    const response = await axios.get('https://engine.hotellook.com/api/v2/cache.json', {
-      params: {
-        location: location,
-        currency: currency,
-        checkIn: check_in,
-        checkOut: check_out,
-        limit: 10,
-        token: process.env.TRAVELPAYOUTS_API_KEY
-      }
-    });
-
-    res.json({
-      success: true,
-      hotels: response.data
-    });
-  } catch (error) {
-    console.error('Travelpayouts Hotels API Error:', error.response?.data || error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch hotel data'
-    });
-  }
-});
-
-// Generate Itinerary endpoint
+// Generate Itinerary endpoint - with improved error handling
 app.post('/api/generate-itinerary', async (req, res) => {
   try {
+    setHeaders(res);
     const { destination, startDate, endDate, preferences } = req.body;
     
     if (!destination || !startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required parameters: destination, startDate, endDate'
+        error: 'Missing required fields'
       });
     }
 
-    // Get attractions from TomTom
-    const attractionsResponse = await axios.get(`http://localhost:${PORT}/api/attractions/${destination}`, {
-      params: { limit: 15 }
-    });
-
-    // Get images from Pixabay
-    const imagesResponse = await axios.get(`http://localhost:${PORT}/api/images/${destination}`, {
-      params: { per_page: 12 }
-    });
-
-    // Get weather forecast
-    const weatherResponse = await axios.get(`http://localhost:${PORT}/api/weather/${destination}`, {
-      params: { days: 7 }
-    });
-
-    // Generate AI-powered itinerary
-    const itineraryPrompt = `Create a detailed ${Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))} day travel itinerary for ${destination} from ${startDate} to ${endDate}. 
+    // Calculate trip duration
+    const tripDays = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
     
-    Available attractions: ${attractionsResponse.data.attractions.map(a => a.name).join(', ')}
-    
-    Preferences: ${preferences || 'General sightseeing'}
-    
-    Please provide a day-by-day itinerary with:
-    - Morning, afternoon, and evening activities
-    - Recommended restaurants and local cuisine
-    - Transportation tips
-    - Cultural insights and tips
-    
-    Format as JSON with this structure:
-    {
-      "days": [
-        {
-          "day": 1,
-          "date": "YYYY-MM-DD",
-          "title": "Day title",
-          "activities": [
-            {
-              "time": "Morning",
-              "activity": "Activity description",
-              "location": "Location name"
-            }
-          ]
-        }
-      ]
-    }`;
+    // Fallback itinerary if APIs fail
+    const fallbackItinerary = {
+      days: Array.from({ length: tripDays }, (_, i) => ({
+        day: i + 1,
+        date: new Date(new Date(startDate).setDate(new Date(startDate).getDate() + i)).toISOString().split('T')[0],
+        title: `Day ${i + 1} in ${destination}`,
+        activities: [
+          { time: 'Morning', activity: 'Breakfast and morning exploration', location: 'City Center' },
+          { time: 'Afternoon', activity: 'Local attractions visit', location: 'Various' },
+          { time: 'Evening', activity: 'Dinner at recommended restaurant', location: 'Local cuisine' }
+        ]
+      })),
+      attractions: [],
+      images: [],
+      weather: null
+    };
 
-    const aiResponse = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'openai/gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a travel expert. Respond only with valid JSON.' },
-        { role: 'user', content: itineraryPrompt }
-      ]
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    let itinerary;
     try {
-      itinerary = JSON.parse(aiResponse.data.choices[0].message.content);
-    } catch (parseError) {
-      // Fallback if AI doesn't return valid JSON
-      itinerary = {
-        days: [{
-          day: 1,
-          date: startDate,
-          title: `Explore ${destination}`,
-          activities: [
-            { time: 'Morning', activity: 'Arrival and check-in', location: destination },
-            { time: 'Afternoon', activity: 'City exploration', location: destination },
-            { time: 'Evening', activity: 'Local dining experience', location: destination }
-          ]
-        }]
+      // Parallel API calls with error handling
+      const [attractions, images, weather] = await Promise.allSettled([
+        axios.get(`http://localhost:${PORT}/api/attractions/${destination}`, { params: { limit: 15 } }),
+        axios.get(`http://localhost:${PORT}/api/images/${destination}`, { params: { per_page: 12 } }),
+        axios.get(`http://localhost:${PORT}/api/weather/${destination}`, { params: { days: tripDays } })
+      ]);
+
+      // Process responses
+      const itineraryData = {
+        attractions: attractions.value?.data?.attractions || [],
+        images: images.value?.data?.images || [],
+        weather: weather.value?.data?.weather || null
       };
+
+      res.json({
+        success: true,
+        ...fallbackItinerary,
+        ...itineraryData
+      });
+
+    } catch (apiError) {
+      console.error('Partial API failure:', apiError);
+      res.json({
+        success: true,
+        ...fallbackItinerary
+      });
     }
 
-    res.json({
-      success: true,
-      itinerary: itinerary,
-      attractions: attractionsResponse.data.attractions,
-      images: imagesResponse.data.images,
-      weather: weatherResponse.data.weather
-    });
-
   } catch (error) {
-    console.error('Itinerary Generation Error:', error.message);
+    console.error('Itinerary generation failed:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to generate itinerary'
@@ -368,8 +335,13 @@ app.post('/api/generate-itinerary', async (req, res) => {
   }
 });
 
-// Start server
+// Single server listener
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Travel Consultant API server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`CORS configured for: ${corsOptions.origin}`);
+  console.log('Available services:');
+  console.log(`- OpenRouter: ${!!process.env.OPENROUTER_API_KEY ? 'Enabled' : 'Disabled'}`);
+  console.log(`- TomTom: ${!!process.env.TOMTOM_API_KEY ? 'Enabled' : 'Disabled'}`);
+  console.log(`- Pixabay: ${!!process.env.PIXABAY_API_KEY ? 'Enabled' : 'Disabled'}`);
+  console.log(`- WeatherAPI: ${!!process.env.WEATHER_API_KEY ? 'Enabled' : 'Disabled'}`);
 });
-

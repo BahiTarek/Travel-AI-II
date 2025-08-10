@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Sparkles, Clock, Sun, Cloud, CloudRain, Loader } from 'lucide-react';
-import axios from 'axios';
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://travel-ai-ii.onrender.com';
+import api from '../utils/api'; // Use the centralized API utility
 
 const Itinerary = () => {
   const [searchParams] = useSearchParams();
@@ -17,80 +16,87 @@ const Itinerary = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Set default dates (today + 7 days)
+  useEffect(() => {
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    
+    setFormData(prev => ({
+      ...prev,
+      startDate: today.toISOString().split('T')[0],
+      endDate: nextWeek.toISOString().split('T')[0]
+    }));
+  }, []);
+
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!formData.destination || !formData.startDate || !formData.endDate) {
-    setError('Please fill in all required fields');
-    return;
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.destination || !formData.startDate || !formData.endDate) {
+      setError('Please fill in all required fields');
+      return;
+    }
 
-  setLoading(true);
-  setError('');
+    // Validate date range
+    if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      setError('End date must be after start date');
+      return;
+    }
 
-  try {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/generate-itinerary`,
-      {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await api.post('/generate-itinerary', {
         destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
+        travelers: formData.travelers,
         preferences: formData.preferences
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000 // 30 second timeout
-      }
-    );
+      });
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || 'Failed to generate itinerary');
-    }
-
-    setItinerary(response.data);
-  } catch (error) {
-    console.error('Full error:', error);
-    console.error('Error response:', error.response);
-    
-    let errorMessage = 'Failed to generate itinerary. Please try again.';
-    
-    if (error.response) {
-      // Handle HTTP error responses
-      if (error.response.status === 404) {
-        errorMessage = 'Itinerary service not found. Please contact support.';
-      } else if (error.response.status === 500) {
-        errorMessage = 'Server error. Our team has been notified.';
-      } else if (error.response.data?.error) {
-        errorMessage = error.response.data.error;
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to generate itinerary');
       }
-    } else if (error.message.includes('timeout')) {
-      errorMessage = 'Request timed out. Please try again.';
-    } else if (error.message) {
-      errorMessage = error.message;
+
+      setItinerary(response.data.data || response.data); // Handle both response formats
+    } catch (error) {
+      console.error('Itinerary generation error:', error);
+      
+      let errorMessage = 'Failed to generate itinerary. Please try again.';
+      if (error.response) {
+        errorMessage = error.response.data?.error || 
+                      error.response.statusText || 
+                      `Server error (${error.response.status})`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
-    
-    setError(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getWeatherIcon = (condition) => {
-    if (condition?.text?.toLowerCase().includes('sun') || condition?.text?.toLowerCase().includes('clear')) {
+    if (!condition) return <Cloud className="h-5 w-5 text-gray-500" />;
+    
+    const text = condition.text.toLowerCase();
+    if (text.includes('sun') || text.includes('clear')) {
       return <Sun className="h-5 w-5 text-yellow-500" />;
-    } else if (condition?.text?.toLowerCase().includes('rain')) {
+    } else if (text.includes('rain')) {
       return <CloudRain className="h-5 w-5 text-blue-500" />;
-    } else {
-      return <Cloud className="h-5 w-5 text-gray-500" />;
     }
+    return <Cloud className="h-5 w-5 text-gray-500" />;
   };
 
   const formatDate = (dateString) => {
@@ -102,6 +108,14 @@ const handleSubmit = async (e) => {
     });
   };
 
+  // Calculate trip duration in days
+  const tripDuration = () => {
+    if (!formData.startDate || !formData.endDate) return 0;
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  };
+
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -111,14 +125,15 @@ const handleSubmit = async (e) => {
             AI Itinerary Generator
           </h1>
           <p className="text-xl text-gray-600">
-            Create your perfect travel itinerary with AI-powered recommendations
+            Create your perfect {tripDuration()}-day trip to {formData.destination || 'your destination'}
           </p>
         </div>
 
-        {/* Form */}
+        {/* Form Section */}
         <div className="card p-8 mb-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Destination Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="inline h-4 w-4 mr-1" />
@@ -130,11 +145,12 @@ const handleSubmit = async (e) => {
                   value={formData.destination}
                   onChange={handleInputChange}
                   placeholder="e.g., Paris, France"
-                  className="input-field"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
 
+              {/* Travelers Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Users className="inline h-4 w-4 mr-1" />
@@ -144,47 +160,37 @@ const handleSubmit = async (e) => {
                   name="travelers"
                   value={formData.travelers}
                   onChange={handleInputChange}
-                  className="input-field"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="1">1 Traveler</option>
-                  <option value="2">2 Travelers</option>
-                  <option value="3">3 Travelers</option>
-                  <option value="4">4 Travelers</option>
-                  <option value="5+">5+ Travelers</option>
+                  {[1, 2, 3, 4, 5, '6+'].map(num => (
+                    <option key={num} value={num}>
+                      {num} {num === 1 ? 'Traveler' : 'Travelers'}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="inline h-4 w-4 mr-1" />
-                  Start Date *
-                </label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="inline h-4 w-4 mr-1" />
-                  End Date *
-                </label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                />
-              </div>
+              {/* Date Fields */}
+              {['startDate', 'endDate'].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="inline h-4 w-4 mr-1" />
+                    {field === 'startDate' ? 'Start Date *' : 'End Date *'}
+                  </label>
+                  <input
+                    type="date"
+                    name={field}
+                    value={formData[field]}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                    min={field === 'endDate' ? formData.startDate : undefined}
+                  />
+                </div>
+              ))}
             </div>
 
+            {/* Preferences Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Sparkles className="inline h-4 w-4 mr-1" />
@@ -196,58 +202,68 @@ const handleSubmit = async (e) => {
                 onChange={handleInputChange}
                 placeholder="e.g., Museums, local cuisine, nightlife, outdoor activities, budget-friendly options..."
                 rows="3"
-                className="input-field"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
+            {/* Error Display */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600">{error}</p>
+              <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
               </div>
             )}
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className={`w-full py-4 px-6 rounded-md text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {loading ? (
-                <>
-                  <Loader className="h-5 w-5 animate-spin" />
-                  <span>Generating Your Itinerary...</span>
-                </>
+                <span className="flex items-center justify-center">
+                  <Loader className="h-5 w-5 animate-spin mr-2" />
+                  Generating Your Itinerary...
+                </span>
               ) : (
-                <>
-                  <Sparkles className="h-5 w-5" />
-                  <span>Generate Itinerary</span>
-                </>
+                <span className="flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Generate Itinerary
+                </span>
               )}
             </button>
           </form>
         </div>
 
-        {/* Generated Itinerary */}
+        {/* Results Section */}
         {itinerary && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fadeIn">
             {/* Destination Images */}
-            {itinerary.images && itinerary.images.length > 0 && (
+            {itinerary.images?.length > 0 && (
               <div className="card p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Discover {formData.destination}
+                  Discover {itinerary.destination || formData.destination}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {itinerary.images.slice(0, 6).map((image, index) => (
-                    <div key={index} className="relative rounded-lg overflow-hidden">
+                    <div key={index} className="relative group rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
                       <img
-                        src={image.url}
-                        alt={image.tags}
-                        className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                        src={image.url || image.preview}
+                        alt={image.tags || `Image of ${formData.destination}`}
+                        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                      <div className="absolute bottom-2 left-2">
-                        <p className="text-white text-sm font-medium">
-                          {image.tags.split(',')[0]}
-                        </p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-4 left-4 text-white">
+                        <p className="font-medium">{image.tags?.split(',')[0] || 'Travel Image'}</p>
                       </div>
                     </div>
                   ))}
@@ -261,18 +277,21 @@ const handleSubmit = async (e) => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
                   Weather Forecast
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-                  {itinerary.weather.forecast.map((day, index) => (
-                    <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-600 mb-2">
-                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2">
+                  {itinerary.weather.forecast?.map((day, index) => (
+                    <div key={index} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-medium text-gray-600 mb-1">
+                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
                       </p>
-                      <div className="flex justify-center mb-2">
-                        {getWeatherIcon(day.day.condition)}
+                      <div className="my-2">
+                        {getWeatherIcon(day.day?.condition)}
                       </div>
-                      <p className="text-xs text-gray-500 mb-1">{day.day.condition?.text}</p>
+                      <p className="text-xs text-gray-500 mb-1">
+                        {day.day?.condition?.text || 'N/A'}
+                      </p>
                       <p className="text-sm font-semibold">
-                        {Math.round(day.day.maxtemp_c)}°/{Math.round(day.day.mintemp_c)}°C
+                        {day.day?.maxtemp_c ? Math.round(day.day.maxtemp_c) : 'N'}°/
+                        {day.day?.mintemp_c ? Math.round(day.day.mintemp_c) : 'N'}°C
                       </p>
                     </div>
                   ))}
@@ -281,74 +300,88 @@ const handleSubmit = async (e) => {
             )}
 
             {/* Daily Itinerary */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Your Daily Itinerary
-              </h2>
-              
-              {itinerary.itinerary.days?.map((day, index) => (
-                <div key={index} className="card p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        Day {day.day}: {day.title}
-                      </h3>
-                      <p className="text-gray-600">{formatDate(day.date)}</p>
+            {itinerary.itinerary?.days?.length > 0 && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Your Daily Itinerary
+                </h2>
+                
+                {itinerary.itinerary.days.map((day, index) => (
+                  <div key={index} className="card p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          Day {day.day}: {day.title}
+                        </h3>
+                        <p className="text-gray-600">{formatDate(day.date)}</p>
+                      </div>
+                      {itinerary.weather?.forecast?.[index] && (
+                        <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                          {getWeatherIcon(itinerary.weather.forecast[index].day?.condition)}
+                          <span>
+                            {itinerary.weather.forecast[index].day?.maxtemp_c 
+                              ? Math.round(itinerary.weather.forecast[index].day.maxtemp_c) 
+                              : 'N'}°C
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {itinerary.weather?.forecast[index] && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        {getWeatherIcon(itinerary.weather.forecast[index].day.condition)}
-                        <span>{Math.round(itinerary.weather.forecast[index].day.maxtemp_c)}°C</span>
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="space-y-4">
-                    {day.activities?.map((activity, actIndex) => (
-                      <div key={actIndex} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="flex-shrink-0">
-                          <Clock className="h-5 w-5 text-primary mt-1" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-sm font-medium text-primary">
-                              {activity.time}
-                            </span>
-                            <span className="text-sm text-gray-500">•</span>
-                            <span className="text-sm text-gray-600">
-                              {activity.location}
-                            </span>
+                    <div className="space-y-3">
+                      {day.activities?.map((activity, actIndex) => (
+                        <div key={actIndex} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex-shrink-0 pt-1">
+                            <Clock className="h-5 w-5 text-blue-500" />
                           </div>
-                          <p className="text-gray-900">{activity.activity}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                              <span className="text-sm font-medium text-blue-600">
+                                {activity.time}
+                              </span>
+                              {activity.location && (
+                                <>
+                                  <span className="hidden sm:block text-sm text-gray-400">•</span>
+                                  <span className="text-sm text-gray-600 truncate">
+                                    {activity.location}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-gray-900 whitespace-pre-line">
+                              {activity.activity}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Attractions */}
-            {itinerary.attractions && itinerary.attractions.length > 0 && (
+            {itinerary.attractions?.length > 0 && (
               <div className="card p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Popular Attractions
+                  Recommended Attractions
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {itinerary.attractions.slice(0, 9).map((attraction, index) => (
-                    <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-2">
+                    <div key={index} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                      <h3 className="font-semibold text-gray-900 mb-2 truncate">
                         {attraction.name}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {attraction.address}
-                      </p>
-                      {attraction.categories && (
-                        <div className="flex flex-wrap gap-1">
-                          {attraction.categories.slice(0, 2).map((category, catIndex) => (
+                      {attraction.address && (
+                        <p className="text-sm text-gray-600 mb-2 truncate">
+                          {attraction.address}
+                        </p>
+                      )}
+                      {attraction.categories?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {attraction.categories.slice(0, 3).map((category, catIndex) => (
                             <span
                               key={catIndex}
-                              className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                             >
                               {category}
                             </span>
@@ -368,4 +401,3 @@ const handleSubmit = async (e) => {
 };
 
 export default Itinerary;
-
