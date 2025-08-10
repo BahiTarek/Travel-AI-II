@@ -116,11 +116,11 @@ const Itinerary = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+        <div className="section text-center">
+          <h1 className="text-3xl lg:text-4xl font-bold mb-4">
             AI Itinerary Generator
           </h1>
           <p className="text-xl text-gray-600">
@@ -129,12 +129,12 @@ const Itinerary = () => {
         </div>
 
         {/* Form Section */}
-        <div className="card p-8 mb-8">
+        <div className="card section">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Destination Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2">
                   <MapPin className="inline h-4 w-4 mr-1" />
                   Destination *
                 </label>
@@ -144,14 +144,12 @@ const Itinerary = () => {
                   value={formData.destination}
                   onChange={handleInputChange}
                   placeholder="e.g., Paris, France"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
-
               {/* Travelers Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2">
                   <Users className="inline h-4 w-4 mr-1" />
                   Number of Travelers
                 </label>
@@ -159,7 +157,6 @@ const Itinerary = () => {
                   name="travelers"
                   value={formData.travelers}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {[1, 2, 3, 4, 5, '6+'].map(num => (
                     <option key={num} value={num}>
@@ -168,11 +165,10 @@ const Itinerary = () => {
                   ))}
                 </select>
               </div>
-
               {/* Date Fields */}
               {['startDate', 'endDate'].map((field) => (
                 <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2">
                     <Calendar className="inline h-4 w-4 mr-1" />
                     {field === 'startDate' ? 'Start Date *' : 'End Date *'}
                   </label>
@@ -181,17 +177,15 @@ const Itinerary = () => {
                     name={field}
                     value={formData[field]}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                     min={field === 'endDate' ? formData.startDate : undefined}
                   />
                 </div>
               ))}
             </div>
-
             {/* Preferences Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2">
                 <Sparkles className="inline h-4 w-4 mr-1" />
                 Travel Preferences
               </label>
@@ -201,31 +195,28 @@ const Itinerary = () => {
                 onChange={handleInputChange}
                 placeholder="e.g., Museums, local cuisine, nightlife, outdoor activities, budget-friendly options..."
                 rows="3"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-
             {/* Error Display */}
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4">
+              <div className="bg-red-50">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
+                    <p className="text-sm">{error}</p>
                   </div>
                 </div>
               </div>
             )}
-
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 px-6 rounded-md text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className="w-full"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -247,11 +238,11 @@ const Itinerary = () => {
           <div className="space-y-8 animate-fadeIn">
             {/* Destination Images */}
             {itinerary.images?.length > 0 && (
-              <div className="card p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <div className="card section">
+                <h2 className="text-2xl font-bold mb-4 text-center">
                   Discover {itinerary.destination || formData.destination}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {itinerary.images.slice(0, 6).map((image, index) => (
                     <div key={index} className="relative group rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
                       <img
@@ -272,20 +263,20 @@ const Itinerary = () => {
 
             {/* Weather Forecast */}
             {itinerary.weather && (
-              <div className="card p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <div className="card section">
+                <h2 className="text-2xl font-bold mb-4 text-center">
                   Weather Forecast
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
                   {itinerary.weather.forecast?.map((day, index) => (
                     <div key={index} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-600 mb-1">
+                      <p className="text-sm font-medium mb-1">
                         {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
                       </p>
                       <div className="my-2">
                         {getWeatherIcon(day.day?.condition)}
                       </div>
-                      <p className="text-xs text-gray-500 mb-1">
+                      <p className="text-xs mb-1">
                         {day.day?.condition?.text || 'N/A'}
                       </p>
                       <p className="text-sm font-semibold">
@@ -301,21 +292,20 @@ const Itinerary = () => {
             {/* Daily Itinerary */}
             {itinerary.itinerary?.days?.length > 0 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-center">
                   Your Daily Itinerary
                 </h2>
-                
                 {itinerary.itinerary.days.map((day, index) => (
-                  <div key={index} className="card p-6">
+                  <div key={index} className="card section">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">
+                        <h3 className="text-xl font-bold">
                           Day {day.day}: {day.title}
                         </h3>
-                        <p className="text-gray-600">{formatDate(day.date)}</p>
+                        <p>{formatDate(day.date)}</p>
                       </div>
                       {itinerary.weather?.forecast?.[index] && (
-                        <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                        <div className="flex items-center space-x-2 text-sm bg-gray-100 px-3 py-1 rounded-full">
                           {getWeatherIcon(itinerary.weather.forecast[index].day?.condition)}
                           <span>
                             {itinerary.weather.forecast[index].day?.maxtemp_c 
@@ -325,7 +315,6 @@ const Itinerary = () => {
                         </div>
                       )}
                     </div>
-
                     <div className="space-y-3">
                       {day.activities?.map((activity, actIndex) => (
                         <div key={actIndex} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
@@ -346,7 +335,7 @@ const Itinerary = () => {
                                 </>
                               )}
                             </div>
-                            <p className="text-gray-900 whitespace-pre-line">
+                            <p className="whitespace-pre-line">
                               {activity.activity}
                             </p>
                           </div>
@@ -360,18 +349,18 @@ const Itinerary = () => {
 
             {/* Attractions */}
             {itinerary.attractions?.length > 0 && (
-              <div className="card p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <div className="card section">
+                <h2 className="text-2xl font-bold mb-4 text-center">
                   Recommended Attractions
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {itinerary.attractions.slice(0, 9).map((attraction, index) => (
                     <div key={index} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <h3 className="font-semibold text-gray-900 mb-2 truncate">
+                      <h3 className="font-semibold mb-2 truncate">
                         {attraction.name}
                       </h3>
                       {attraction.address && (
-                        <p className="text-sm text-gray-600 mb-2 truncate">
+                        <p className="text-sm mb-2 truncate">
                           {attraction.address}
                         </p>
                       )}
