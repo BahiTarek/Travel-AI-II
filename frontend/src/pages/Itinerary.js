@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Sparkles, Clock, Sun, Cloud, CloudRain, Loader } from 'lucide-react';
-import api from '../utils/api'; // Use the centralized API utility
+import api from '../utils/api';
 
 const Itinerary = () => {
   const [searchParams] = useSearchParams();
@@ -16,12 +16,10 @@ const Itinerary = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Set default dates (today + 7 days)
   useEffect(() => {
     const today = new Date();
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
-    
     setFormData(prev => ({
       ...prev,
       startDate: today.toISOString().split('T')[0],
@@ -39,47 +37,36 @@ const Itinerary = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate required fields
     if (!formData.destination || !formData.startDate || !formData.endDate) {
       setError('Please fill in all required fields');
       return;
     }
-
-    // Validate date range
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       setError('End date must be after start date');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
-    const response = await api.post('/api/generate-itinerary', {  // Changed from '/generate-itinerary'
-      destination: formData.destination,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      preferences: formData.preferences
-    });
-
+      const response = await api.post('/api/generate-itinerary', {
+        destination: formData.destination,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        preferences: formData.preferences
+      });
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to generate itinerary');
       }
-
-      setItinerary(response.data.data || response.data); // Handle both response formats
+      setItinerary(response.data.data || response.data);
     } catch (error) {
-      console.error('Itinerary generation error:', error);
-      
       let errorMessage = 'Failed to generate itinerary. Please try again.';
       if (error.response) {
-        errorMessage = error.response.data?.error || 
-                      error.response.statusText || 
-                      `Server error (${error.response.status})`;
+        errorMessage = error.response.data?.error ||
+          error.response.statusText ||
+          `Server error (${error.response.status})`;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -88,7 +75,6 @@ const Itinerary = () => {
 
   const getWeatherIcon = (condition) => {
     if (!condition) return <Cloud className="h-5 w-5 text-gray-500" />;
-    
     const text = condition.text.toLowerCase();
     if (text.includes('sun') || text.includes('clear')) {
       return <Sun className="h-5 w-5 text-yellow-500" />;
@@ -107,7 +93,6 @@ const Itinerary = () => {
     });
   };
 
-  // Calculate trip duration in days
   const tripDuration = () => {
     if (!formData.startDate || !formData.endDate) return 0;
     const start = new Date(formData.startDate);
@@ -129,12 +114,15 @@ const Itinerary = () => {
         </div>
 
         {/* Form Section */}
-        <div className="card section">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card section flex justify-center">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full max-w-lg mx-auto space-y-6"
+          >
+            <div className="space-y-4">
               {/* Destination Field */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
+              <div className="flex flex-col">
+                <label className="text-sm font-medium mb-2 flex items-center">
                   <MapPin className="inline h-4 w-4 mr-1" />
                   Destination *
                 </label>
@@ -148,8 +136,8 @@ const Itinerary = () => {
                 />
               </div>
               {/* Travelers Field */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
+              <div className="flex flex-col">
+                <label className="text-sm font-medium mb-2 flex items-center">
                   <Users className="inline h-4 w-4 mr-1" />
                   Number of Travelers
                 </label>
@@ -166,36 +154,49 @@ const Itinerary = () => {
                 </select>
               </div>
               {/* Date Fields */}
-              {['startDate', 'endDate'].map((field) => (
-                <div key={field}>
-                  <label className="block text-sm font-medium mb-2">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 flex flex-col">
+                  <label className="text-sm font-medium mb-2 flex items-center">
                     <Calendar className="inline h-4 w-4 mr-1" />
-                    {field === 'startDate' ? 'Start Date *' : 'End Date *'}
+                    Start Date *
                   </label>
                   <input
                     type="date"
-                    name={field}
-                    value={formData[field]}
+                    name="startDate"
+                    value={formData.startDate}
                     onChange={handleInputChange}
                     required
-                    min={field === 'endDate' ? formData.startDate : undefined}
                   />
                 </div>
-              ))}
-            </div>
-            {/* Preferences Field */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                <Sparkles className="inline h-4 w-4 mr-1" />
-                Travel Preferences
-              </label>
-              <textarea
-                name="preferences"
-                value={formData.preferences}
-                onChange={handleInputChange}
-                placeholder="e.g., Museums, local cuisine, nightlife, outdoor activities, budget-friendly options..."
-                rows="3"
-              />
+                <div className="flex-1 flex flex-col">
+                  <label className="text-sm font-medium mb-2 flex items-center">
+                    <Calendar className="inline h-4 w-4 mr-1" />
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleInputChange}
+                    required
+                    min={formData.startDate}
+                  />
+                </div>
+              </div>
+              {/* Preferences Field */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium mb-2 flex items-center">
+                  <Sparkles className="inline h-4 w-4 mr-1" />
+                  Travel Preferences
+                </label>
+                <textarea
+                  name="preferences"
+                  value={formData.preferences}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Museums, local cuisine, nightlife, outdoor activities, budget-friendly options..."
+                  rows="3"
+                />
+              </div>
             </div>
             {/* Error Display */}
             {error && (
@@ -216,7 +217,7 @@ const Itinerary = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full"
+              className="btn-primary w-full"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
