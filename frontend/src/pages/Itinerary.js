@@ -3,6 +3,116 @@ import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, Users, Sparkles, Clock, Sun, Cloud, CloudRain, Loader } from 'lucide-react';
 import api from '../utils/api';
 
+// --- Centralized Style Objects ---
+const containerStyle = {
+  maxWidth: '900px',
+  margin: '0 auto',
+  padding: '2.5rem 1rem'
+};
+
+const cardStyle = {
+  backgroundColor: 'white',
+  borderRadius: '1.25rem',
+  boxShadow: '0 2px 12px rgba(60, 80, 180, 0.09)',
+  border: '1px solid #e5e7eb',
+  padding: '2.5rem 2rem',
+  marginBottom: '2rem'
+};
+
+const sectionTitleStyle = {
+  fontSize: '2.5rem',
+  fontWeight: 'bold',
+  color: '#1e293b',
+  marginBottom: '1rem',
+  textAlign: 'center'
+};
+
+const subtitleStyle = {
+  fontSize: '1.25rem',
+  color: '#6b7280',
+  textAlign: 'center',
+  marginBottom: '2rem'
+};
+
+const formGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '2rem',
+  marginBottom: '2rem'
+};
+
+const labelStyle = {
+  fontWeight: '500',
+  marginBottom: '0.5rem',
+  display: 'flex',
+  alignItems: 'center'
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '0.75rem 1rem',
+  borderRadius: '0.75rem',
+  border: '1px solid #d1d5db',
+  background: '#f9fafb',
+  fontSize: '1rem',
+  marginBottom: '1rem'
+};
+
+const buttonStyle = {
+  width: '100%',
+  padding: '1rem',
+  borderRadius: '0.75rem',
+  background: 'linear-gradient(90deg, #2563eb 0%, #60a5fa 100%)',
+  color: '#fff',
+  fontWeight: '600',
+  fontSize: '1.1rem',
+  border: 'none',
+  cursor: 'pointer',
+  marginTop: '1rem'
+};
+
+const errorStyle = {
+  background: '#fef2f2',
+  color: '#b91c1c',
+  borderRadius: '0.5rem',
+  marginBottom: '1rem',
+  padding: '1rem'
+};
+
+const gridStyle = {
+  display: 'grid',
+  gridTemplateColumns: '1fr',
+  gap: '1.5rem'
+};
+
+const gridStyleMd = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '1.5rem'
+};
+
+const gridStyleLg = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 1fr',
+  gap: '1.5rem'
+};
+
+// --- Responsive helper ---
+const useResponsiveGrid = () => {
+  const [style, setStyle] = useState(gridStyle);
+  useEffect(() => {
+    const updateStyle = () => {
+      if (window.innerWidth >= 1024) setStyle(gridStyleLg);
+      else if (window.innerWidth >= 600) setStyle(gridStyleMd);
+      else setStyle(gridStyle);
+    };
+    updateStyle();
+    window.addEventListener('resize', updateStyle);
+    return () => window.removeEventListener('resize', updateStyle);
+  }, []);
+  return style;
+};
+
 const Itinerary = () => {
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
@@ -15,6 +125,7 @@ const Itinerary = () => {
   const [itinerary, setItinerary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const gridResponsive = useResponsiveGrid();
 
   useEffect(() => {
     const today = new Date();
@@ -74,14 +185,14 @@ const Itinerary = () => {
   };
 
   const getWeatherIcon = (condition) => {
-    if (!condition) return <Cloud className="h-5 w-5 text-gray-500" />;
+    if (!condition) return <Cloud size={20} color="#64748b" />;
     const text = condition.text.toLowerCase();
     if (text.includes('sun') || text.includes('clear')) {
-      return <Sun className="h-5 w-5 text-yellow-500" />;
+      return <Sun size={20} color="#facc15" />;
     } else if (text.includes('rain')) {
-      return <CloudRain className="h-5 w-5 text-blue-500" />;
+      return <CloudRain size={20} color="#38bdf8" />;
     }
-    return <Cloud className="h-5 w-5 text-gray-500" />;
+    return <Cloud size={20} color="#64748b" />;
   };
 
   const formatDate = (dateString) => {
@@ -101,242 +212,269 @@ const Itinerary = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl">
-        {/* Header */}
-        <div className="section text-center">
-          <h1 className="text-3xl lg:text-4xl font-bold mb-4">
-            AI Itinerary Generator
-          </h1>
-          <p className="text-xl text-gray-600">
-            Create your perfect {tripDuration()}-day trip to {formData.destination || 'your destination'}
-          </p>
-        </div>
-
+    <div style={containerStyle}>
+      {/* Header */}
+      <div style={cardStyle}>
+        <h1 style={sectionTitleStyle}>AI Itinerary Generator</h1>
+        <p style={subtitleStyle}>
+          Create your perfect {tripDuration()}-day trip to {formData.destination || 'your destination'}
+        </p>
         {/* Form Section */}
-        <div className="card section flex justify-center">
-          <form
-            onSubmit={handleSubmit}
-            className="w-full max-w-lg mx-auto space-y-6"
-          >
-            <div className="space-y-4">
-              {/* Destination Field */}
-              <div className="flex flex-col">
-                <label className="text-sm font-medium mb-2 flex items-center">
-                  <MapPin className="inline h-4 w-4 mr-1" />
-                  Destination *
-                </label>
-                <input
-                  type="text"
-                  name="destination"
-                  value={formData.destination}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Paris, France"
-                  required
-                />
-              </div>
-              {/* Travelers Field */}
-              <div className="flex flex-col">
-                <label className="text-sm font-medium mb-2 flex items-center">
-                  <Users className="inline h-4 w-4 mr-1" />
-                  Number of Travelers
-                </label>
-                <select
-                  name="travelers"
-                  value={formData.travelers}
-                  onChange={handleInputChange}
-                >
-                  {[1, 2, 3, 4, 5, '6+'].map(num => (
-                    <option key={num} value={num}>
-                      {num} {num === 1 ? 'Traveler' : 'Travelers'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* Date Fields */}
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 flex flex-col">
-                  <label className="text-sm font-medium mb-2 flex items-center">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    Start Date *
-                  </label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="flex-1 flex flex-col">
-                  <label className="text-sm font-medium mb-2 flex items-center">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    End Date *
-                  </label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
-                    required
-                    min={formData.startDate}
-                  />
-                </div>
-              </div>
-              {/* Preferences Field */}
-              <div className="flex flex-col">
-                <label className="text-sm font-medium mb-2 flex items-center">
-                  <Sparkles className="inline h-4 w-4 mr-1" />
-                  Travel Preferences
-                </label>
-                <textarea
-                  name="preferences"
-                  value={formData.preferences}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Museums, local cuisine, nightlife, outdoor activities, budget-friendly options..."
-                  rows="3"
-                />
-              </div>
+        <form onSubmit={handleSubmit}>
+          <div style={formGridStyle}>
+            <div>
+              <label style={labelStyle}>
+                <MapPin style={{ marginRight: '0.5rem' }} />
+                Destination *
+              </label>
+              <input
+                type="text"
+                name="destination"
+                value={formData.destination}
+                onChange={handleInputChange}
+                placeholder="e.g., Paris, France"
+                required
+                style={inputStyle}
+              />
             </div>
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm">{error}</p>
-                  </div>
-                </div>
-              </div>
+            <div>
+              <label style={labelStyle}>
+                <Users style={{ marginRight: '0.5rem' }} />
+                Number of Travelers
+              </label>
+              <select
+                name="travelers"
+                value={formData.travelers}
+                onChange={handleInputChange}
+                style={inputStyle}
+              >
+                {[1, 2, 3, 4, 5, '6+'].map(num => (
+                  <option key={num} value={num}>
+                    {num} {num === 1 ? 'Traveler' : 'Travelers'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>
+                <Calendar style={{ marginRight: '0.5rem' }} />
+                Start Date *
+              </label>
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                required
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>
+                <Calendar style={{ marginRight: '0.5rem' }} />
+                End Date *
+              </label>
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                required
+                min={formData.startDate}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>
+              <Sparkles style={{ marginRight: '0.5rem' }} />
+              Travel Preferences
+            </label>
+            <textarea
+              name="preferences"
+              value={formData.preferences}
+              onChange={handleInputChange}
+              placeholder="e.g., Museums, local cuisine, nightlife, outdoor activities, budget-friendly options..."
+              rows="3"
+              style={inputStyle}
+            />
+          </div>
+          {error && (
+            <div style={errorStyle}>
+              {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            style={buttonStyle}
+          >
+            {loading ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Loader style={{ marginRight: '0.5rem' }} />
+                Generating Your Itinerary...
+              </span>
+            ) : (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Sparkles style={{ marginRight: '0.5rem' }} />
+                Generate Itinerary
+              </span>
             )}
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <Loader className="h-5 w-5 animate-spin mr-2" />
-                  Generating Your Itinerary...
-                </span>
-              ) : (
-                <span className="flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  Generate Itinerary
-                </span>
-              )}
-            </button>
-          </form>
-        </div>
+          </button>
+        </form>
+      </div>
 
-        {/* Results Section */}
-        {itinerary && (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Destination Images */}
-            {itinerary.images?.length > 0 && (
-              <div className="card section">
-                <h2 className="text-2xl font-bold mb-4 text-center">
-                  Discover {itinerary.destination || formData.destination}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {itinerary.images.slice(0, 6).map((image, index) => (
-                    <div key={index} className="relative group rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-                      <img
-                        src={image.url || image.preview}
-                        alt={image.tags || `Image of ${formData.destination}`}
-                        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 text-white">
-                        <p className="font-medium">{image.tags?.split(',')[0] || 'Travel Image'}</p>
-                      </div>
+      {/* Results Section */}
+      {itinerary && (
+        <div style={cardStyle}>
+          {/* Destination Images */}
+          {itinerary.images?.length > 0 && (
+            <>
+              <h2 style={sectionTitleStyle}>
+                Discover {itinerary.destination || formData.destination}
+              </h2>
+              <div style={gridResponsive}>
+                {itinerary.images.slice(0, 6).map((image, index) => (
+                  <div key={index} style={{
+                    position: 'relative',
+                    borderRadius: '1rem',
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 8px rgba(60,80,180,0.07)'
+                  }}>
+                    <img
+                      src={image.url || image.preview}
+                      alt={image.tags || `Image of ${formData.destination}`}
+                      style={{
+                        width: '100%',
+                        height: '180px',
+                        objectFit: 'cover',
+                        transition: 'transform 0.3s'
+                      }}
+                      loading="lazy"
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'
+                    }} />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '1rem',
+                      left: '1rem',
+                      color: 'white'
+                    }}>
+                      <p style={{ fontWeight: '500' }}>{image.tags?.split(',')[0] || 'Travel Image'}</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </>
+          )}
 
-            {/* Weather Forecast */}
-            {itinerary.weather && (
-              <div className="card section">
-                <h2 className="text-2xl font-bold mb-4 text-center">
-                  Weather Forecast
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
-                  {itinerary.weather.forecast?.map((day, index) => (
-                    <div key={index} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium mb-1">
-                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                      </p>
-                      <div className="my-2">
-                        {getWeatherIcon(day.day?.condition)}
-                      </div>
-                      <p className="text-xs mb-1">
-                        {day.day?.condition?.text || 'N/A'}
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {day.day?.maxtemp_c ? Math.round(day.day.maxtemp_c) : 'N'}°/
-                        {day.day?.mintemp_c ? Math.round(day.day.mintemp_c) : 'N'}°C
-                      </p>
+          {/* Weather Forecast */}
+          {itinerary.weather && (
+            <>
+              <h2 style={sectionTitleStyle}>Weather Forecast</h2>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '1rem',
+                marginBottom: '2rem'
+              }}>
+                {itinerary.weather.forecast?.map((day, index) => (
+                  <div key={index} style={{
+                    background: '#f9fafb',
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontWeight: '500', marginBottom: '0.5rem' }}>
+                      {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </p>
+                    <div style={{ margin: '0.5rem 0' }}>
+                      {getWeatherIcon(day.day?.condition)}
                     </div>
-                  ))}
-                </div>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      {day.day?.condition?.text || 'N/A'}
+                    </p>
+                    <p style={{ fontWeight: '600' }}>
+                      {day.day?.maxtemp_c ? Math.round(day.day.maxtemp_c) : 'N'}°/
+                      {day.day?.mintemp_c ? Math.round(day.day.mintemp_c) : 'N'}°C
+                    </p>
+                  </div>
+                ))}
               </div>
-            )}
+            </>
+          )}
 
-            {/* Daily Itinerary */}
-            {itinerary.itinerary?.days?.length > 0 && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-center">
-                  Your Daily Itinerary
-                </h2>
+          {/* Daily Itinerary */}
+          {itinerary.itinerary?.days?.length > 0 && (
+            <>
+              <h2 style={sectionTitleStyle}>Your Daily Itinerary</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {itinerary.itinerary.days.map((day, index) => (
-                  <div key={index} className="card section">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                      <div>
-                        <h3 className="text-xl font-bold">
-                          Day {day.day}: {day.title}
-                        </h3>
-                        <p>{formatDate(day.date)}</p>
-                      </div>
+                  <div key={index} style={cardStyle}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      marginBottom: '1rem'
+                    }}>
+                      <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold' }}>
+                        Day {day.day}: {day.title}
+                      </h3>
+                      <p>{formatDate(day.date)}</p>
                       {itinerary.weather?.forecast?.[index] && (
-                        <div className="flex items-center space-x-2 text-sm bg-gray-100 px-3 py-1 rounded-full">
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          background: '#f3f4f6',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '999px',
+                          fontSize: '0.95rem',
+                          fontWeight: '500'
+                        }}>
                           {getWeatherIcon(itinerary.weather.forecast[index].day?.condition)}
                           <span>
-                            {itinerary.weather.forecast[index].day?.maxtemp_c 
-                              ? Math.round(itinerary.weather.forecast[index].day.maxtemp_c) 
+                            {itinerary.weather.forecast[index].day?.maxtemp_c
+                              ? Math.round(itinerary.weather.forecast[index].day.maxtemp_c)
                               : 'N'}°C
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="space-y-3">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       {day.activities?.map((activity, actIndex) => (
-                        <div key={actIndex} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex-shrink-0 pt-1">
-                            <Clock className="h-5 w-5 text-blue-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                              <span className="text-sm font-medium text-blue-600">
+                        <div key={actIndex} style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '1rem',
+                          background: '#f9fafb',
+                          borderRadius: '0.75rem',
+                          padding: '1rem'
+                        }}>
+                          <Clock size={20} color="#2563eb" style={{ marginTop: '0.2rem' }} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              marginBottom: '0.3rem'
+                            }}>
+                              <span style={{ color: '#2563eb', fontWeight: '500' }}>
                                 {activity.time}
                               </span>
                               {activity.location && (
                                 <>
-                                  <span className="hidden sm:block text-sm text-gray-400">•</span>
-                                  <span className="text-sm text-gray-600 truncate">
+                                  <span style={{ color: '#94a3b8' }}>•</span>
+                                  <span style={{ color: '#64748b' }}>
                                     {activity.location}
                                   </span>
                                 </>
                               )}
                             </div>
-                            <p className="whitespace-pre-line">
+                            <p style={{ whiteSpace: 'pre-line' }}>
                               {activity.activity}
                             </p>
                           </div>
@@ -346,45 +484,57 @@ const Itinerary = () => {
                   </div>
                 ))}
               </div>
-            )}
+            </>
+          )}
 
-            {/* Attractions */}
-            {itinerary.attractions?.length > 0 && (
-              <div className="card section">
-                <h2 className="text-2xl font-bold mb-4 text-center">
-                  Recommended Attractions
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {itinerary.attractions.slice(0, 9).map((attraction, index) => (
-                    <div key={index} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                      <h3 className="font-semibold mb-2 truncate">
-                        {attraction.name}
-                      </h3>
-                      {attraction.address && (
-                        <p className="text-sm mb-2 truncate">
-                          {attraction.address}
-                        </p>
-                      )}
-                      {attraction.categories?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {attraction.categories.slice(0, 3).map((category, catIndex) => (
-                            <span
-                              key={catIndex}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                            >
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          {/* Attractions */}
+          {itinerary.attractions?.length > 0 && (
+            <>
+              <h2 style={sectionTitleStyle}>Recommended Attractions</h2>
+              <div style={gridResponsive}>
+                {itinerary.attractions.slice(0, 9).map((attraction, index) => (
+                  <div key={index} style={{
+                    background: '#f9fafb',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '1rem',
+                    padding: '1rem',
+                    boxShadow: '0 2px 8px rgba(60,80,180,0.07)'
+                  }}>
+                    <h3 style={{ fontWeight: '600', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                      {attraction.name}
+                    </h3>
+                    {attraction.address && (
+                      <p style={{ fontSize: '0.95rem', marginBottom: '0.5rem', color: '#64748b' }}>
+                        {attraction.address}
+                      </p>
+                    )}
+                    {attraction.categories?.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        {attraction.categories.slice(0, 3).map((category, catIndex) => (
+                          <span
+                            key={catIndex}
+                            style={{
+                              display: 'inline-block',
+                              padding: '0.3rem 0.7rem',
+                              borderRadius: '999px',
+                              fontSize: '0.85rem',
+                              fontWeight: '500',
+                              background: '#dbeafe',
+                              color: '#2563eb'
+                            }}
+                          >
+                            {category}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
