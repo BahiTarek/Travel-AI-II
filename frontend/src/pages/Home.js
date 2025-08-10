@@ -78,40 +78,64 @@ const Home = () => {
     margin: '0 auto 2rem auto'
   };
 
-  const searchContainerStyle = {
-    display: 'flex',
-    gap: '1rem',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(8px)',
-    borderRadius: '1rem',
-    padding: '1rem'
-  };
+ const searchContainerStyle = {
+  display: 'flex',
+  alignItems: 'center', // Vertical align
+  gap: '0', // No extra gap
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  backdropFilter: 'blur(8px)',
+  borderRadius: '0.5rem',
+  padding: '0.25rem', // Small padding instead of 1rem
+  width: '100%',
+  flexWrap: 'nowrap', // Prevent stacking
+};
 
-  const inputContainerStyle = {
-    flex: 1,
-    position: 'relative'
-  };
 
-  const inputStyle = {
-    width: '100%',
-    paddingLeft: '2.5rem',
-    paddingRight: '1rem',
-    paddingTop: '0.75rem',
-    paddingBottom: '0.75rem',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    borderRadius: '0.5rem',
-    color: 'white',
-    outline: 'none'
-  };
+const inputContainerStyle = {
+  flex: 1, // Takes available space
+  position: 'relative',
+  minWidth: '200px', // Prevent squeezing
+  marginTop: '0.9rem'
+};
+
+const inputStyle = {
+  flex: '1',
+  height: '48px',
+  padding: '0 1rem 0 2.5rem',
+  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  borderRadius: '0.5rem 0 0 0.5rem', // Rounded left only
+  color: 'white',
+  outline: 'none',
+  boxSizing: 'border-box'
+};
 
   const iconStyle = {
     position: 'absolute',
     left: '0.75rem',
-    top: '50%',
+    top: '40%',
     transform: 'translateY(-50%)',
     color: 'rgba(255, 255, 255, 0.7)'
   };
+
+  // Update the button style (add this new style object)
+const searchButtonStyle = {
+  height: '48px',
+  padding: '0 1.5rem',
+  borderRadius: '0 0.5rem 0.5rem 0', // Rounded right only
+  backgroundColor: '#ff6600',
+  color: 'white',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: '1rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.5rem',
+  flexShrink: 0,
+  marginBottom: '0.5rem'
+};
+
 
   const sectionStyle = {
     padding: '5rem 0'
@@ -201,6 +225,27 @@ const Home = () => {
     flexWrap: 'wrap'
   };
 
+  // For the tags below (Flexible Dates, etc.)
+const tagsContainerStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '1rem',
+  flexWrap: 'wrap',
+  marginTop: '1.5rem',  // Increased margin for better spacing
+  width: '100%'
+};
+
+
+const tagStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  borderRadius: '9999px',
+  padding: '0.5rem 1rem',
+  fontSize: '0.875rem',
+};
+
   return (
     <div style={{ minHeight: '100vh' }}>
       {/* Hero Section */}
@@ -215,7 +260,7 @@ const Home = () => {
           </p>
           
           {/* Search Form */}
-          <form onSubmit={handleSearch} style={searchFormStyle}>
+          <form onSubmit={handleSearch} style={{ ...searchFormStyle, width: '100%' }}>
             <div style={searchContainerStyle}>
               <div style={inputContainerStyle}>
                 <MapPin style={iconStyle} size={20} />
@@ -227,31 +272,31 @@ const Home = () => {
                   style={inputStyle}
                 />
               </div>
-              <button
-                type="submit"
-                className="btn-accent"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
-              >
-                <Search size={20} />
-                <span>Start Planning</span>
-              </button>
+             <button
+  type="submit"
+  className="btn-accent"
+  style={searchButtonStyle}
+>
+  <Search size={20} />
+  <span>Start Planning</span>
+</button>
             </div>
           </form>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', fontSize: '0.875rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', padding: '0.5rem 1rem' }}>
-              <Calendar size={16} />
-              <span>Flexible Dates</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', padding: '0.5rem 1rem' }}>
-              <Users size={16} />
-              <span>Any Group Size</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', padding: '0.5rem 1rem' }}>
-              <Sparkles size={16} />
-              <span>AI Powered</span>
-            </div>
-          </div>
+         <div style={tagsContainerStyle}>
+  <div style={tagStyle}>
+    <Calendar size={16} />
+    <span>Flexible Dates</span>
+  </div>
+   <div style={tagStyle}>
+    <Users size={16} />
+    <span>Any Group Size</span>
+  </div>
+  <div style={tagStyle}>
+    <Sparkles size={16} />
+    <span>AI Powered</span>
+  </div>
+</div>
         </div>
       </section>
 
