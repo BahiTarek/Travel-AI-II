@@ -56,13 +56,12 @@ const Itinerary = () => {
     setError('');
 
     try {
-      const response = await api.post('/itinerary', {
-        destination: formData.destination,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        travelers: formData.travelers,
-        preferences: formData.preferences
-      });
+    const response = await api.post('/api/generate-itinerary', {  // Changed from '/generate-itinerary'
+      destination: formData.destination,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      preferences: formData.preferences
+    });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to generate itinerary');

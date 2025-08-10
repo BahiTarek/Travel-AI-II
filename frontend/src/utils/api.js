@@ -107,8 +107,8 @@ export const apiService = {
     flights: (params) => api.get('/api/flights', { params }),
     hotels: (params) => api.get('/api/hotels', { params })
   },
-  itinerary: {
-    generate: (data) => api.post('/api/generate-itinerary', data),
+ itinerary: {
+  generate: (data) => api.post('/api/generate-itinerary', data), 
     save: (id, data) => api.put(`/api/itineraries/${id}`, data),
     get: (id) => api.get(`/api/itineraries/${id}`)
   },
