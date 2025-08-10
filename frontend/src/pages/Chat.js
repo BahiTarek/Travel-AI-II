@@ -174,7 +174,7 @@ const Chat = () => {
           <input
             type="text"
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.value)}
+           onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Ask about flights, hotels, or destinations..."
             className="chat-input"
             disabled={isLoading}
