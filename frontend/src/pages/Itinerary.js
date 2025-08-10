@@ -510,33 +510,3 @@ const Itinerary = () => {
                     )}
                     {attraction.categories?.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        {attraction.categories.slice(0, 3).map((category, catIndex) => (
-                          <span
-                            key={catIndex}
-                            style={{
-                              display: 'inline-block',
-                              padding: '0.3rem 0.7rem',
-                              borderRadius: '999px',
-                              fontSize: '0.85rem',
-                              fontWeight: '500',
-                              background: '#dbeafe',
-                              color: '#2563eb'
-                            }}
-                          >
-                            {category}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default Itinerary;
