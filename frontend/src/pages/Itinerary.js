@@ -117,6 +117,14 @@ const Itinerary = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      {/* Section Title Bar */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="flex items-center gap-3 bg-blue-50 rounded-2xl px-6 py-4 shadow border border-blue-100">
+          <Compass className="h-6 w-6 text-blue-600" />
+          <span className="text-xl font-bold text-blue-700">Plan Your Trip</span>
+        </div>
+      </div>
+
       {/* Hero Section with Enhanced Background */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/5 to-teal-600/10"></div>
@@ -146,10 +154,10 @@ const Itinerary = () => {
 
           {/* Enhanced Form Section */}
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 lg:p-12">
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 lg:p-12 mb-12">
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Destination Field with Enhanced Styling */}
+                  {/* Destination Field with Icon */}
                   <div className="lg:col-span-2">
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                       <div className="flex items-center gap-2">
@@ -159,15 +167,18 @@ const Itinerary = () => {
                         Where would you like to go? *
                       </div>
                     </label>
-                    <input
-                      type="text"
-                      name="destination"
-                      value={formData.destination}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Paris, France or Tokyo, Japan"
-                      className="w-full px-6 py-4 text-lg border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder:text-slate-400"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="destination"
+                        value={formData.destination}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Paris, France or Tokyo, Japan"
+                        className="w-full pl-12 pr-6 py-4 text-lg border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm placeholder:text-slate-400"
+                        required
+                      />
+                      <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-400" />
+                    </div>
                   </div>
 
                   {/* Date Fields with Enhanced Design */}
@@ -296,9 +307,12 @@ const Itinerary = () => {
         </div>
       </div>
 
-      {/* Results Section with Enhanced Design */}
+      {/* Divider */}
+      <hr className="my-12 border-t-2 border-blue-100 rounded-full" />
+
+      {/* Results Section with Enhanced Design and Animation */}
       {itinerary && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12 animate-fade-in">
           {/* Destination Images with Enhanced Gallery */}
           {itinerary.images?.length > 0 && (
             <div className="bg-white rounded-3xl shadow-xl border border-slate-200/50 p-8 lg:p-12">

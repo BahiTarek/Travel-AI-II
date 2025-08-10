@@ -263,3 +263,74 @@ a:hover {
 .App-link {
   color: #61dafb;
 }
+
+/* Add these new styles to App.css */
+
+/* Enhanced shadows and transitions */
+.card {
+  transition: all 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Improved input focus states */
+.input-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Better button hover effects */
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Improved message bubbles in chat */
+.message-bubble {
+  position: relative;
+}
+
+.message-bubble:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+}
+
+.user-message:after {
+  right: -10px;
+  border-left-color: #004aad;
+  border-right: 0;
+}
+
+.bot-message:after {
+  left: -10px;
+  border-right-color: #f4f4f4;
+  border-left: 0;
+}
+
+/* Enhanced weather icons */
+.weather-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Better responsive behavior */
+@media (max-width: 640px) {
+  .search-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .result-card {
+    padding: 1rem;
+  }
+}
