@@ -125,16 +125,7 @@ code {
   margin-bottom: 0.5rem;
   transition: box-shadow 0.2s, background 0.2s;
 }
-.user-message {
-  align-self: flex-end;
-  background-color: #004aad;
-  color: #fff;
-}
-.bot-message {
-  align-self: flex-start;
-  background-color: #f3f4f6;
-  color: #222;
-}
+
 
 /* Fade-in animation for messages */
 @keyframes fadeIn {

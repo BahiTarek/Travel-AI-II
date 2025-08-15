@@ -17,12 +17,26 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+  }
+};
 
-  useEffect(() => {
+useEffect(() => {
+  // Only scroll if it's a new bot message or the user is at/near the bottom
+  if (messages.length > 0 && (messages[messages.length - 1].type === 'bot' || isNearBottom())) {
     scrollToBottom();
-  }, [messages]);
+  }
+}, [messages]);
+
+const isNearBottom = () => {
+  const container = messagesEndRef.current?.parentElement;
+  if (!container) return false;
+  return container.scrollTop + container.clientHeight >= container.scrollHeight - 100;
+};
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -115,88 +129,90 @@ const Chat = () => {
   ];
 
   return (
-    <div className="chat-container">
-      {/* Header */}
-      <div className="chat-header">
-        <div className="chat-header-icon">
-          <Bot size={20} />
-        </div>
-        <div className="chat-header-text">
-          <h1>Travel Assistant</h1>
-          <p>AI-powered travel consultant</p>
-        </div>
+  <div className="chat-container">
+    {/* Header */}
+    <div className="chat-header">
+      <div className="chat-header-icon">
+        <Bot size={20} />
       </div>
-
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <p>QUICK ACTIONS</p>
-        <div>
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              onClick={action.action}
-              className="quick-action-btn"
-            >
-              {action.text}
-            </button>
-          ))}
-        </div>
+      <div className="chat-header-text">
+        <h1>Travel Assistant</h1>
+        <p>AI-powered travel consultant</p>
       </div>
+    </div>
 
-      {/* Messages */}
+    {/* Quick Actions */}
+    <div className="quick-actions">
+      <p>QUICK ACTIONS</p>
+      <div>
+        {quickActions.map((action, index) => (
+          <button
+            key={index}
+            onClick={action.action}
+            className="quick-action-btn"
+          >
+            {action.text}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Main Chat Area */}
+    <div className="chat-main-area">
+      {/* Messages Container - This will scroll */}
       <div className="messages-container">
         {messages.map((message) => (
-  <div
-    key={message.id}
-    className={`message ${message.type === 'user' ? 'user-message' : 'bot-message'}`}
-  >
-    {message.type === 'bot' && (
-      <div className="message-avatar">
-        <Bot size={16} />
-      </div>
-    )}
-    <div className="message-content">
-      {message.type === 'bot' && typeof message.content === 'string' ? (
-        <div dangerouslySetInnerHTML={{
-          __html: formatBotResponse(message.content)
-        }} />
-      ) : (
-        message.content
-      )}
-      <div className="message-timestamp">
-        {message.timestamp}
-      </div>
-    </div>
-    {message.type === 'user' && (
-      <div className="message-avatar">
-        <User size={16} />
-      </div>
-    )}
-  </div>
-))}
+          <div
+            key={message.id}
+            className={`message ${message.type === 'user' ? 'user-message' : 'bot-message'}`}
+          >
+            {message.type === 'bot' && (
+              <div className="message-avatar">
+                <Bot size={16} />
+              </div>
+            )}
+            <div className="message-content">
+              {message.type === 'bot' && typeof message.content === 'string' ? (
+                <div dangerouslySetInnerHTML={{
+                  __html: formatBotResponse(message.content)
+                }} />
+              ) : (
+                message.content
+              )}
+              <div className="message-timestamp">
+                {message.timestamp}
+              </div>
+            </div>
+            {message.type === 'user' && (
+              <div className="message-avatar">
+                <User size={16} />
+              </div>
+            )}
+          </div>
+        ))}
 
-{isLoading && (
-  <div className="message bot-message">
-    <div className="message-avatar">
-      <Bot size={16} />
-    </div>
-    <div className="typing-indicator">
-      <div className="typing-dot"></div>
-      <div className="typing-dot"></div>
-      <div className="typing-dot"></div>
-    </div>
-  </div>
-)}
+        {isLoading && (
+          <div className="message bot-message">
+            <div className="message-avatar">
+              <Bot size={16} />
+            </div>
+            <div className="typing-indicator">
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
+      {/* Input Area - Fixed at bottom */}
       <div className="chat-input-area">
         <form onSubmit={handleSendMessage} className="chat-input-form">
           <input
             type="text"
             value={inputMessage}
-           onChange={(e) => setInputMessage(e.target.value)}
+            onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Ask about flights, hotels, or destinations..."
             className="chat-input"
             disabled={isLoading}
@@ -211,13 +227,14 @@ const Chat = () => {
           </button>
         </form>
       </div>
-
-      {/* Footer */}
-      <div className="chat-footer">
-        AI Assistant may produce inaccurate information
-      </div>
     </div>
-  );
+
+    {/* Footer */}
+    <div className="chat-footer">
+      AI Assistant may produce inaccurate information
+    </div>
+  </div>
+);
 };
 
 export default Chat;

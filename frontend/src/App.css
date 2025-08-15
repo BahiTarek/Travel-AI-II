@@ -307,6 +307,8 @@ html {
   border: 10px solid transparent;
 }
 
+
+
 .user-message:after {
   right: -10px;
   border-left-color: #b9bdc1;
@@ -370,13 +372,25 @@ html {
 }
 /* --- Chat Container --- */
 .chat-container {
-  max-width: 2000px;
-  margin: 2rem auto;
-  border-radius: 1.5rem;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  background: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Full viewport height */
+  max-width: 90%;
+  margin: 0 auto;
+  background: transparent;
+   border-radius: 0; 
 }
+
+.chat-main-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+
+
 
 /* --- Chat Header --- */
 .chat-header {
@@ -386,6 +400,7 @@ html {
   display: flex;
   align-items: center;
   gap: 1rem;
+   flex-shrink: 0;
 }
 
 .chat-header-icon {
@@ -443,10 +458,15 @@ html {
 
 /* --- Messages Container --- */
 .messages-container {
-  height: 500px;
-  padding: 1.5rem;
+  flex: 1;
   overflow-y: auto;
-  background: #f9fafb;
+  padding: 1.5rem 5%;
+  background: transparent;
+  /* Add smooth scrolling */
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
 }
 
 /* --- Message Bubbles --- */
@@ -460,7 +480,12 @@ html {
 .user-message {
   margin-left: auto;
   flex-direction: row-reverse;
+   position: relative;
+  padding-right: 3rem;
+  max-width: min(85%, 800px); 
+  min-width: 0; 
 }
+
 
 .bot-message {
   margin-right: auto;
@@ -476,11 +501,15 @@ html {
 }
 
 .user-message .message-content {
-  background: #a3a2a5;
+  background: #d4d0dc;
   color: rgb(23, 1, 1);
   border-top-right-radius: 0.25rem;
   margin-left: 0.75rem;
   margin-right: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+ white-space: normal; 
 }
 
 .bot-message .message-content {
@@ -541,6 +570,10 @@ html {
   color: white;
   margin-left: 0.75rem;
   margin-right: 0;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0; 
+  align-self: flex-start; 
 }
 
 .bot-message .message-avatar {
@@ -552,9 +585,12 @@ html {
 
 /* --- Input Area --- */
 .chat-input-area {
-  padding: 1.25rem;
+  padding: 1rem 5%;
   background: white;
-  border-top: 1px solid #e5e7eb;
+  border-top: none;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .chat-input-form {
@@ -575,7 +611,7 @@ html {
 .chat-input:focus {
   outline: none;
   border-color: #a5b4fc;
-  box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.3);
+  box-shadow: 0 0 0 3px rgba(241, 242, 245, 0.3);
 }
 
 .send-btn {
@@ -662,5 +698,29 @@ html {
   color: #9ca3af;
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
+@media (max-width: 768px) {
+  .chat-container {
+    height: calc(var(--vh, 1vh) * 100); /* Fix for mobile viewport */
+  }
+  
+  .messages-container {
+    padding: 1rem;
+  }
+  
+  .chat-input-area {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-message {
+    max-width: 95%; /* More space on mobile */
+  }
+  
+  .user-message .message-content {
+    padding: 0.7rem 0.9rem; /* Slightly reduce padding */
+  }
+}
