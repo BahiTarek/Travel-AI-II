@@ -309,7 +309,7 @@ html {
 
 .user-message:after {
   right: -10px;
-  border-left-color: #004aad;
+  border-left-color: #b9bdc1;
   border-right: 0;
 }
 
@@ -370,7 +370,7 @@ html {
 }
 /* --- Chat Container --- */
 .chat-container {
-  max-width: 800px;
+  max-width: 2000px;
   margin: 2rem auto;
   border-radius: 1.5rem;
   overflow: hidden;
@@ -476,8 +476,8 @@ html {
 }
 
 .user-message .message-content {
-  background: #4f46e5;
-  color: white;
+  background: #a3a2a5;
+  color: rgb(23, 1, 1);
   border-top-right-radius: 0.25rem;
   margin-left: 0.75rem;
   margin-right: 0;
@@ -663,3 +663,4 @@ html {
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
 }
+

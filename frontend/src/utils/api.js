@@ -1,9 +1,20 @@
 import axios from 'axios';
 
 // Environment Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://travel-ai-ii.onrender.com'
-  : 'http://localhost:5000';
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://travel-ai-ii.onrender.com';
+  }
+  
+  // For local development, check if we want to mock API responses
+  if (process.env.REACT_APP_API_MOCK === 'true') {
+    return 'http://localhost:3001'; // Mock API server port
+  }
+  
+  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+};
+
+const API_BASE_URL = getBaseUrl();
 
 // Axios Instance Configuration
 const api = axios.create({

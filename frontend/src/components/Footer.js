@@ -1,59 +1,155 @@
 import React from 'react';
 import { Plane, Mail, Phone, MapPin } from 'lucide-react';
-import '../index.css';
 
 const Footer = () => {
+  // Style constants
+  const styles = {
+    footer: {
+      backgroundColor: '#f5f5f5ff',
+      color: 'black',
+      padding: '3rem 0 0',
+      marginTop: 'auto'
+    },
+    container: {
+      maxWidth: '1280px',
+      margin: '0 auto',
+      padding: '0 1.5rem'
+    },
+    grid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+      gap: '2rem',
+      marginBottom: '3rem',
+      '@media (max-width: 640px)': {
+        gridTemplateColumns: '1fr'
+      }
+    },
+    column: {
+      padding: '0 1rem'
+    },
+    logoContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      marginBottom: '1.5rem'
+    },
+    logoText: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      color: 'black'
+    },
+    description: {
+      color: '#000000ff',
+      lineHeight: '1.6',
+      maxWidth: '400px'
+    },
+    heading: {
+      fontSize: '1.125rem',
+      fontWeight: '600',
+      marginBottom: '1.25rem',
+      color: 'black'
+    },
+    linkList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem'
+    },
+    link: {
+      color: '#000000ff',
+      textDecoration: 'none',
+      transition: 'color 0.2s ease',
+      fontSize: '0.95rem',
+      ':hover': {
+        color: '#3049c6ff'
+      }
+    },
+    contactItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      marginBottom: '1rem',
+      color: '#000000ff',
+      fontSize: '0.95rem'
+    },
+    divider: {
+      borderTop: '1px solid #374151',
+      paddingTop: '2rem',
+      marginTop: '2rem'
+    },
+    copyright: {
+      textAlign: 'center',
+      color: '#9ca3af',
+      paddingBottom: '2rem'
+    },
+    icon: {
+      color: '#ff6600',
+      flexShrink: 0
+    }
+  };
+
+  // Navigation links
+  const links = [
+    { name: 'Home', href: '/' },
+    { name: 'AI Chat', href: '/chat' },
+    { name: 'Itinerary', href: '/itinerary' },
+    { name: 'Search', href: '/search' },
+    { name: 'About', href: '/about' }
+  ];
+
+  // Contact information
+  const contactInfo = [
+    { icon: <Mail size={18} style={styles.icon} />, text: 'hello@travelai.com' },
+    { icon: <Phone size={18} style={styles.icon} />, text: '+1 (555) 123-4567' },
+    { icon: <MapPin size={18} style={styles.icon} />, text: 'San Francisco, CA' }
+  ];
+
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <Plane className="h-8 w-8 text-accent" />
-              <span className="text-2xl font-bold">TravelAI</span>
+    <footer style={styles.footer}>
+      <div style={styles.container}>
+        <div style={styles.grid}>
+          {/* Brand Column */}
+          <div style={styles.column}>
+            <div style={styles.logoContainer}>
+              <Plane size={32} style={styles.icon} />
+              <span style={styles.logoText}>TravelAI</span>
             </div>
-            <p className="text-gray-300 mb-4 max-w-md">
+            <p style={styles.description}>
               Your AI-powered travel consultant. Discover amazing destinations, 
               plan perfect itineraries, and find the best deals for your next adventure.
             </p>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><a href="/" className="text-gray-300 hover:text-accent transition-colors">Home</a></li>
-              <li><a href="/chat" className="text-gray-300 hover:text-accent transition-colors">AI Chat</a></li>
-              <li><a href="/itinerary" className="text-gray-300 hover:text-accent transition-colors">Itinerary</a></li>
-              <li><a href="/search" className="text-gray-300 hover:text-accent transition-colors">Search</a></li>
-              <li><a href="/about" className="text-gray-300 hover:text-accent transition-colors">About</a></li>
-            </ul>
+          {/* Links Column */}
+          <div style={styles.column}>
+            <h3 style={styles.heading}>Quick Links</h3>
+            <div style={styles.linkList}>
+              {links.map((link, index) => (
+                <a key={index} href={link.href} style={styles.link}>
+                  {link.name}
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Contact</h3>
-            <ul className="space-y-2">
-              <li className="flex items-center space-x-2">
-                <Mail className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">hello@travelai.com</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <Phone className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">+1 (555) 123-4567</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">San Francisco, CA</span>
-              </li>
-            </ul>
+          {/* Contact Column */}
+          <div style={styles.column}>
+            <h3 style={styles.heading}>Contact Us</h3>
+            <div>
+              {contactInfo.map((item, index) => (
+                <div key={index} style={styles.contactItem}>
+                  {item.icon}
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400">
-            © 2024 TravelAI. All rights reserved. Built with AI-powered technology.
+        {/* Copyright */}
+        <div style={styles.divider}>
+          <p style={styles.copyright}>
+            © {new Date().getFullYear()} TravelAI. All rights reserved. 
+            Built with AI-powered technology.
           </p>
         </div>
       </div>
@@ -62,4 +158,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

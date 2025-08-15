@@ -75,7 +75,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Enhanced OpenRouter AI Chat endpoint (unchanged)
+// Enhanced OpenRouter AI Chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
     setHeaders(res);
@@ -127,7 +127,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// TomTom Places Search endpoint (unchanged)
+// TomTom Places Search endpoint
 app.get('/api/attractions/:location', async (req, res) => {
   try {
     const { location } = req.params;
@@ -165,7 +165,7 @@ app.get('/api/attractions/:location', async (req, res) => {
   }
 });
 
-// Pixabay Images Search endpoint (unchanged)
+// Pixabay Images Search endpoint
 app.get('/api/images/:query', async (req, res) => {
   try {
     const { query } = req.params;
@@ -205,22 +205,12 @@ app.get('/api/images/:query', async (req, res) => {
   }
 });
 
-// WeatherAPI endpoint (unchanged)
+// WeatherAPI endpoint
 app.get('/api/weather/:location', async (req, res) => {
   try {
-    setHeaders(res);
     const { location } = req.params;
     const { days = 7 } = req.query;
     
-    // Skip if no API key
-    if (!process.env.WEATHER_API_KEY) {
-      return res.json({
-        success: true,
-        weather: null,
-        message: 'Weather service not configured'
-      });
-    }
-
     const response = await axios.get('http://api.weatherapi.com/v1/forecast.json', {
       params: {
         key: process.env.WEATHER_API_KEY,
@@ -228,8 +218,7 @@ app.get('/api/weather/:location', async (req, res) => {
         days: days,
         aqi: 'no',
         alerts: 'no'
-      },
-      timeout: 5000 // 5 second timeout
+      }
     });
 
     const weather = {
@@ -246,23 +235,14 @@ app.get('/api/weather/:location', async (req, res) => {
       }))
     };
 
-    res.json({
-      success: true,
-      weather: weather
-    });
+    res.json({ success: true, weather });
   } catch (error) {
     console.error('WeatherAPI Error:', error.response?.data || error.message);
-    setHeaders(res);
-    // Return success even if weather fails
-    res.json({
-      success: true,
-      weather: null,
-      message: 'Weather data unavailable'
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch weather data' });
   }
 });
 
-// Travelpayouts Flight Search endpoint (unchanged)
+// Travelpayouts Flight Search endpoint
 app.get('/api/flights', async (req, res) => {
   try {
     const { origin, destination, departure_date, return_date, currency = 'USD' } = req.query;
@@ -298,11 +278,56 @@ app.get('/api/flights', async (req, res) => {
   }
 });
 
-// Enhanced Itinerary Generator endpoint with CORS fixes
-app.post('/api/generate-itinerary', async (req, res) => {  // Changed from '/generate-itinerary'
+// Helper function to create basic itinerary structure
+function createBasicItinerary(destination, startDate, duration, attractions) {
+  const days = [];
+  const baseDate = new Date(startDate);
+
+  for (let i = 0; i < duration; i++) {
+    const currentDate = new Date(baseDate);
+    currentDate.setDate(baseDate.getDate() + i);
+    
+    const dayActivities = [
+      {
+        time: "09:00",
+        activity: `Explore ${attractions[i % attractions.length]?.name || 'city center'}`,
+        location: attractions[i % attractions.length]?.name || destination,
+        duration: "2 hours",
+        image_query: destination + " tourist attraction"
+      },
+      {
+        time: "12:00",
+        activity: "Local lunch experience",
+        location: "City center",
+        duration: "1.5 hours",
+        image_query: destination + " local food"
+      },
+      {
+        time: "15:00",
+        activity: `Visit ${attractions[(i + 1) % attractions.length]?.name || 'local landmark'}`,
+        location: attractions[(i + 1) % attractions.length]?.name || destination,
+        duration: "2.5 hours",
+        image_query: destination + " landmark"
+      }
+    ];
+
+    days.push({
+      dayNumber: i + 1,
+      date: currentDate.toISOString().split('T')[0],
+      activities: dayActivities
+    });
+  }
+
+  return {
+    destination,
+    days
+  };
+}
+
+// Enhanced Itinerary Generator endpoint
+app.post('/api/generate-itinerary', async (req, res) => {
   try {
-    setHeaders(res);
-    const { destination, startDate, endDate, preferences } = req.body;
+    const { destination, startDate, endDate, preferences, duration } = req.body;
     
     if (!destination || !startDate || !endDate) {
       return res.status(400).json({
@@ -311,79 +336,211 @@ app.post('/api/generate-itinerary', async (req, res) => {  // Changed from '/gen
       });
     }
 
-    // Calculate trip duration
-    const tripDays = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
+    // Calculate trip duration if not provided
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const tripDuration = duration || Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    console.log(`Generating ${tripDuration}-day itinerary for ${destination}`);
+
+    // 1. Get location coordinates
+    const geoResponse = await axios.get(
+      `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(destination)}.json`,
+      { params: { key: process.env.TOMTOM_API_KEY } }
+    );
     
-    // Fallback itinerary if APIs fail
-    const fallbackItinerary = {
-      days: Array.from({ length: tripDays }, (_, i) => ({
-        day: i + 1,
-        date: new Date(new Date(startDate).setDate(new Date(startDate).getDate() + i)).toISOString().split('T')[0],
-        title: `Day ${i + 1} in ${destination}`,
-        activities: [
-          { time: 'Morning', activity: 'Breakfast and morning exploration', location: 'City Center' },
-          { time: 'Afternoon', activity: 'Local attractions visit', location: 'Various' },
-          { time: 'Evening', activity: 'Dinner at recommended restaurant', location: 'Local cuisine' }
-        ]
-      })),
-      attractions: [],
-      images: [],
-      weather: null
-    };
+    if (!geoResponse.data.results.length) {
+      throw new Error('Location not found');
+    }
+    
+    const { lat, lon } = geoResponse.data.results[0].position;
 
-    const getBaseUrl = () => {
-      if (process.env.RENDER_EXTERNAL_URL) {
-        return process.env.RENDER_EXTERNAL_URL;
-      }
-      return process.env.NODE_ENV === 'production' 
-        ? 'https://travel-ai-ii.onrender.com' 
-        : `http://localhost:${PORT}`;
-    };
+    // 2. Fetch all data in parallel
+    const [weather, attractions, images] = await Promise.all([
+      axios.get('http://api.weatherapi.com/v1/forecast.json', {
+        params: {
+          key: process.env.WEATHER_API_KEY,
+          q: `${lat},${lon}`,
+          days: Math.min(tripDuration, 10) // API limit is 10 days
+        }
+      }).catch(err => {
+        console.error('Weather API Error:', err.message);
+        return { data: { forecast: { forecastday: [] } } };
+      }),
+      
+      axios.get(`https://api.tomtom.com/search/2/search/${encodeURIComponent(destination)}.json`, {
+        params: {
+          key: process.env.TOMTOM_API_KEY,
+          limit: 20,
+          categorySet: '7318,7315,7317,7376,7377,9361,9362,9376' // Tourist attractions, restaurants
+        }
+      }).catch(err => {
+        console.error('TomTom API Error:', err.message);
+        return { data: { results: [] } };
+      }),
+      
+      axios.get('https://pixabay.com/api/', {
+        params: {
+          key: process.env.PIXABAY_API_KEY,
+          q: destination + ' travel tourism',
+          per_page: 20,
+          category: 'places,travel',
+          image_type: 'photo',
+          orientation: 'horizontal'
+        }
+      }).catch(err => {
+        console.error('Pixabay API Error:', err.message);
+        return { data: { hits: [] } };
+      })
+    ]);
 
-    const baseUrl = getBaseUrl();
+    // 3. Create structured data
+    const attractionsList = attractions.data.results
+      .filter(a => a.poi?.name)
+      .slice(0, 15)
+      .map(a => ({
+        name: a.poi.name,
+        category: a.poi.categories?.[0] || 'attraction',
+        coordinates: `${a.position.lat},${a.position.lon}`
+      }));
 
+    const weatherData = weather.data.forecast.forecastday.map(day => ({
+      date: day.date,
+      condition: day.day.condition.text,
+      high: Math.round(day.day.maxtemp_c),
+      low: Math.round(day.day.mintemp_c)
+    }));
+
+    // 4. Generate AI itinerary with enhanced prompt
+    const enhancedPrompt = `Create a detailed ${tripDuration}-day itinerary for ${destination} from ${startDate} to ${endDate}.
+
+REQUIREMENTS:
+1. Format as JSON with this EXACT structure:
+{
+  "destination": "${destination}",
+  "days": [
+    {
+      "dayNumber": 1,
+      "date": "${startDate}",
+      "activities": [
+        {
+          "time": "08:00",
+          "activity": "Activity name",
+          "description": "Brief description",
+          "location": "Specific location name",
+          "duration": "2 hours",
+          "image_query": "search term for image"
+        }
+      ]
+    }
+  ]
+}
+
+2. Include 4-6 activities per day with specific times (format: "HH:MM")
+3. Each activity must have: time, activity name, location, duration, and image_query
+4. Use these available attractions: ${attractionsList.map(a => a.name).join(', ')}
+5. Include variety: sightseeing, dining, culture, relaxation
+6. Consider weather: ${weatherData.map(w => `${w.date}: ${w.condition}`).join(', ')}
+7. Preferences: ${preferences || 'General tourism'}
+8. Make realistic time allocations and logical geographic flow
+
+IMPORTANT: Return ONLY valid JSON, no additional text.`;
+
+    let itineraryData;
+    
     try {
-      const [attractions, images, weather] = await Promise.allSettled([
-        axios.get(`${baseUrl}/api/attractions/${encodeURIComponent(destination)}`, { 
-          params: { limit: 15 },
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        }),
-        axios.get(`${baseUrl}/api/images/${encodeURIComponent(destination)}`, { 
-          params: { per_page: 12 },
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        }),
-        axios.get(`${baseUrl}/api/weather/${encodeURIComponent(destination)}`, { 
-          params: { days: tripDays },
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-      ]);
+      const aiResponse = await axios.post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        {
+          model: 'anthropic/claude-3-haiku',
+          messages: [{
+            role: 'user',
+            content: enhancedPrompt
+          }],
+          temperature: 0.7,
+          max_tokens: 4000
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000
+        }
+      );
 
-      // Process responses
-      const itineraryData = {
-        attractions: attractions.value?.data?.attractions || [],
-        images: images.value?.data?.images || [],
-        weather: weather.value?.data?.weather || null
-      };
+      // 5. Process AI response
+      const aiContent = aiResponse.data.choices[0].message.content;
+      // Clean the response - remove any markdown formatting
+      const cleanContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      itineraryData = JSON.parse(cleanContent);
+      
+    } catch (parseError) {
+      console.error('Failed to parse AI response or call AI API:', parseError);
+      // Fallback: create basic structure
+      itineraryData = createBasicItinerary(destination, startDate, tripDuration, attractionsList);
+    }
 
-      res.json({
-        success: true,
-        ...fallbackItinerary,
-        ...itineraryData
-      });
+    // 6. Enhance itinerary with real data
+    if (itineraryData.days) {
+      itineraryData.days.forEach((day, dayIndex) => {
+        // Add weather data
+        const dayWeather = weatherData[dayIndex];
+        if (dayWeather) {
+          day.weather = {
+            condition: { text: dayWeather.condition },
+            maxtemp_c: dayWeather.high,
+            mintemp_c: dayWeather.low
+          };
+        }
 
-    } catch (apiError) {
-      console.error('Partial API failure:', apiError);
-      res.json({
-        success: true,
-        ...fallbackItinerary
+        // Enhance activities
+        day.activities?.forEach(activity => {
+          // Find matching attraction for coordinates
+          const matchingAttraction = attractionsList.find(attr => 
+            attr.name.toLowerCase().includes(activity.location?.toLowerCase() || '') ||
+            activity.activity?.toLowerCase().includes(attr.name.toLowerCase())
+          );
+
+          if (matchingAttraction) {
+            activity.map_link = `https://maps.google.com/?q=${matchingAttraction.coordinates}`;
+          }
+
+          // Find matching image
+          const matchingImage = images.data.hits.find(img => 
+            img.tags.toLowerCase().includes(activity.image_query?.split(' ')[0]?.toLowerCase() || 'travel')
+          );
+
+          if (matchingImage) {
+            activity.image = matchingImage.webformatURL;
+          }
+        });
       });
     }
 
+    // 7. Prepare final response
+    const response = {
+      success: true,
+      itinerary: itineraryData,
+      attractions: attractions.data.results.slice(0, 10),
+      images: images.data.hits.slice(0, 8),
+      weather: weatherData,
+      metadata: {
+        destination,
+        duration: tripDuration,
+        generated_at: new Date().toISOString()
+      }
+    };
+
+    console.log('Itinerary generated successfully');
+    res.json(response);
+
   } catch (error) {
-    console.error('Itinerary generation failed:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate itinerary'
+    console.error('Itinerary Generation Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to generate itinerary',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
