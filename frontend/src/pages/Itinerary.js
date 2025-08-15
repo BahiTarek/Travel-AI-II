@@ -47,10 +47,12 @@ const Itinerary = () => {
       const end = new Date(formData.endDate);
       const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/api/generate-itinerary`,
-        {
-          destination: formData.destination,
+     const apiBaseUrl = (process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+
+const response = await axios.post(
+  `${apiBaseUrl}/api/generate-itinerary`,  // Now properly formatted
+  {
+    destination: formData.destination,
           startDate: formData.startDate,
           endDate: formData.endDate,
           preferences: formData.preferences,
