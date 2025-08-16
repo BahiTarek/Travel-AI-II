@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Plane } from 'lucide-react';
 import '../index.css';
@@ -17,139 +17,62 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  const navbarStyle = {
-    backgroundColor: 'white',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 50
-  };
-
-  const containerStyle = {
-    maxWidth: '1280px',
-    margin: '0 auto',
-    padding: '0 1rem'
-  };
-
-  const flexStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    height: '4rem'
-  };
-
-  const logoStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    textDecoration: 'none'
-  };
-
-  const logoTextStyle = {
-    fontSize: '1.25rem',
-    fontWeight: 'bold',
-    color: '#004aad'
-  };
-
-  const desktopNavStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '2rem'
-  };
-
-  const linkStyle = (active) => ({
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    textDecoration: 'none',
-    transition: 'all 0.2s',
-    color: active ? '#004aad' : '#374151',
-    backgroundColor: active ? 'rgba(0, 74, 173, 0.1)' : 'transparent'
-  });
-
-  const mobileButtonStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    color: '#374151',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer'
-  };
-
-  const mobileMenuStyle = {
-    display: isOpen ? 'block' : 'none',
-    backgroundColor: 'white',
-    borderTop: '1px solid #e5e7eb',
-    padding: '0.5rem'
-  };
-
-  const mobileLinkStyle = (active) => ({
-    display: 'block',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    fontSize: '1rem',
-    fontWeight: '500',
-    textDecoration: 'none',
-    color: active ? '#004aad' : '#374151',
-    backgroundColor: active ? 'rgba(0, 74, 173, 0.1)' : 'transparent',
-    marginBottom: '0.25rem'
-  });
+  // Prevent scrolling when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('menu-open');
+    } else {
+      document.body.classList.remove('menu-open');
+    }
+    return () => document.body.classList.remove('menu-open');
+  }, [isOpen]);
 
   return (
-    <nav style={navbarStyle}>
-      <div style={containerStyle}>
-        <div style={flexStyle}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Link to="/" style={logoStyle}>
-              <Plane size={32} color="#004aad" />
-              <span style={logoTextStyle}>TravelAI</span>
-            </Link>
-          </div>
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link to="/" className="logo">
+          <Plane size={32} className="logo-icon" />
+          <span className="logo-text">TravelAI</span>
+        </Link>
 
-          {/* Desktop Navigation */}
-{/* Desktop Navigation */}
-<div className="desktopNav" style={desktopNavStyle}>
-  {navigation.map((item) => (
-    <Link
-      key={item.name}
-      to={item.href}
-      style={linkStyle(isActive(item.href))}
-    >
-      {item.name}
-    </Link>
-  ))}
-</div>
-
-{/* Mobile menu button */}
-<div className="mobileMenuButton">
-  <button
-    onClick={() => setIsOpen(!isOpen)}
-    style={mobileButtonStyle}
-  >
-    {isOpen ? <X size={24} /> : <Menu size={24} />}
-  </button>
-</div>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      <div style={mobileMenuStyle}>
-        <div style={{ padding: '0.5rem 0' }}>
+        {/* Desktop Navigation */}
+        <div className="desktop-nav">
           {navigation.map((item) => (
             <Link
               key={item.name}
               to={item.href}
-              style={mobileLinkStyle(isActive(item.href))}
-              onClick={() => setIsOpen(false)}
+              className={`nav-link ${isActive(item.href) ? 'active' : ''}`}
             >
               {item.name}
             </Link>
           ))}
         </div>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="mobile-menu-button"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+        >
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile Navigation */}
+      <div className={`mobile-menu ${isOpen ? 'open' : ''}`}>
+        {navigation.map((item) => (
+          <Link
+            key={item.name}
+            to={item.href}
+            className={`mobile-nav-link ${isActive(item.href) ? 'active' : ''}`}
+            onClick={() => setIsOpen(false)}
+          >
+            {item.name}
+          </Link>
+        ))}
       </div>
     </nav>
   );
 };
 
 export default Navbar;
-

@@ -10,7 +10,7 @@ import About from './pages/About';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/">
       <div className="App" style={{ minHeight: '100vh', backgroundColor: '#f4f4f4' }}>
         <Navbar />
         <main style={{ minHeight: '100vh' }}>

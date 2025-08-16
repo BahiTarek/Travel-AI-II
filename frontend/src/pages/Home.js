@@ -37,7 +37,7 @@ const Home = () => {
   ];
 
   const popularDestinations = [
-    { name: 'Paris, France', image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400&h=300&fit=crop' },
+    { name: 'Paris, France', image: 'https://images.unsplash.com/photo-1550340499-a6c60fc8287c?=400&h=300&fit=crop' },
     { name: 'Tokyo, Japan', image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop' },
     { name: 'New York, USA', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&h=300&fit=crop' },
     { name: 'Bali, Indonesia', image: 'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=400&h=300&fit=crop' },

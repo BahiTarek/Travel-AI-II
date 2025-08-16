@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path'); 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -543,6 +544,15 @@ IMPORTANT: Return ONLY valid JSON, no additional text.`;
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+});
+
+
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Handle client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 // Single server listener
