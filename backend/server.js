@@ -548,11 +548,11 @@ IMPORTANT: Return ONLY valid JSON, no additional text.`;
 
 
 // Serve static files from React build
-app.use(express.static(path.join(__dirname, 'build')));
+app.use(express.static(path.join(__dirname, 'frontend','build')));
 
 // Handle client-side routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend', 'build', 'index.html'));
 });
 
 // Single server listener
