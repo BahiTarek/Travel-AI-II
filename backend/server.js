@@ -690,22 +690,12 @@ IMPORTANT: Return ONLY valid JSON, no additional text.`;
 });
 
 
-// Add this simple root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Travel AI Backend API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      flights: '/api/flights',
-      hotels: '/api/hotels',
-      chat: '/api/chat',
-      attractions: '/api/attractions/:location',
-      images: '/api/images/:query',
-      weather: '/api/weather/:location',
-      itinerary: '/api/generate-itinerary'
-    }
-  });
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'build')));
+
+// Handle client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'build', 'index.html'));
 });
 
 // Single server listener
@@ -717,4 +707,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`- TomTom: ${!!process.env.TOMTOM_API_KEY ? 'Enabled' : 'Disabled'}`);
   console.log(`- Pixabay: ${!!process.env.PIXABAY_API_KEY ? 'Enabled' : 'Disabled'}`);
   console.log(`- WeatherAPI: ${!!process.env.WEATHER_API_KEY ? 'Enabled' : 'Disabled'}`);
+  console.log(`- TravelpayoutsAPI: ${!!process.env.TRAVELPAYOUTS_API_KEY ? 'Enabled' : 'Disabled'}`);
+  console.log(`- HotellookAPI: ${!!process.env.HOTELLOOK_API_KEY ? 'Enabled' : 'Disabled'}`);
 });
