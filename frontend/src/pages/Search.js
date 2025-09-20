@@ -15,6 +15,13 @@ import axios from "axios";
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
+  // Then create a clean base URL function:
+const getApiUrl = (endpoint) => {
+  const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${base}${cleanEndpoint}`;
+};
+
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
@@ -63,15 +70,15 @@ const SearchPage = () => {
     setResults([]);
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/flights`, {
-        params: {
-          origin: flightData.origin,
-          destination: flightData.destination,
-          departure_date: flightData.departureDate,
-          return_date: flightData.returnDate || undefined,
-          currency: "USD",
-        },
-      });
+      const response = await axios.get(getApiUrl('/api/flights'), {
+  params: {
+    origin: flightData.origin,
+    destination: flightData.destination,
+    departure_date: flightData.departureDate,
+    return_date: flightData.returnDate || undefined,
+    currency: "USD",
+  },
+});
 
       let data = response.data?.flights?.data || [];
       if (typeof data === "object" && !Array.isArray(data)) {
@@ -100,17 +107,17 @@ const searchHotels = async (e) => {
 
   try {
     console.log("Making hotel search request...");
-    const response = await axios.get(`${API_BASE_URL}/api/hotels`, {
-      params: {
-        city: hotelData.location,
-        check_in: hotelData.checkIn,
-        check_out: hotelData.checkOut,
-        currency: "USD",
-        adults: hotelData.adults,
-        children: hotelData.children,
-        rooms: hotelData.rooms,
-      },
-    });
+    const response = await axios.get(getApiUrl('/api/hotels'), {
+  params: {
+    city: hotelData.location,
+    check_in: hotelData.checkIn,
+    check_out: hotelData.checkOut,
+    currency: "USD",
+    adults: hotelData.adults,
+    children: hotelData.children,
+    rooms: hotelData.rooms,
+  },
+});
 
     console.log("Hotel API response:", response.data);
 
