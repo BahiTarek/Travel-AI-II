@@ -690,12 +690,22 @@ IMPORTANT: Return ONLY valid JSON, no additional text.`;
 });
 
 
-// Serve static files from React build
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'build')));
-
-// Handle client-side routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'build', 'index.html'));
+// Add this simple root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Travel AI Backend API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      flights: '/api/flights',
+      hotels: '/api/hotels',
+      chat: '/api/chat',
+      attractions: '/api/attractions/:location',
+      images: '/api/images/:query',
+      weather: '/api/weather/:location',
+      itinerary: '/api/generate-itinerary'
+    }
+  });
 });
 
 // Single server listener
