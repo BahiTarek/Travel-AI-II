@@ -279,6 +279,149 @@ app.get('/api/flights', async (req, res) => {
   }
 });
 
+
+
+app.get("/api/hotels", async (req, res) => {
+  try {
+    console.log("Hotel search request received:", req.query);
+    
+    const { city, check_in, check_out, currency, adults, children, rooms } = req.query;
+
+    if (!city || !check_in || !check_out || !adults) {
+      console.log("Missing required parameters");
+      return res.status(400).json({
+        success: false,
+        error: "Missing required parameters: city, check_in, check_out, adults",
+      });
+    }
+
+    // 1. Lookup locationId from city name
+    console.log("Looking up location ID for:", city);
+    const locationRes = await axios.get('https://engine.hotellook.com/api/v2/lookup.json', {
+      params: {
+        query: city,
+        token: process.env.HOTELLOOK_API_KEY
+      }
+    });
+
+    console.log("Location lookup response status:", locationRes.data.status);
+    
+    // Check if we got any results
+    if (!locationRes.data || locationRes.data.status !== 'ok' || !locationRes.data.results) {
+      console.log("Invalid response format:", locationRes.data);
+      return res.status(404).json({
+        success: false,
+        error: `No locations found for "${city}". Try using a major city name or check spelling.`,
+      });
+    }
+
+    const locations = locationRes.data.results.locations || [];
+    const hotelsFromLookup = locationRes.data.results.hotels || [];
+    
+    console.log(`Found ${locations.length} locations and ${hotelsFromLookup.length} hotels in lookup`);
+
+    // Check if we have any location results
+    if (locations.length === 0) {
+      console.log("No locations found for:", city);
+      return res.status(404).json({
+        success: false,
+        error: `No locations found for "${city}". Try using a major city name or check spelling.`,
+        suggestions: [
+          "Use English city names like 'Paris', 'London', 'New York'",
+          "Try major cities nearby",
+          "Use airport codes like 'NYC', 'LON', 'PAR'",
+          "Check spelling"
+        ]
+      });
+    }
+
+    // Get the first location (most relevant)
+    const firstLocation = locations[0];
+    const locationId = firstLocation.id;
+
+    if (!locationId) {
+      console.log("Location ID not found in first location:", firstLocation);
+      return res.status(404).json({
+        success: false,
+        error: `Could not find hotel data for "${city}".`,
+        alternativeLocations: locations.slice(0, 5).map(loc => ({
+          name: loc.name,
+          country: loc.countryName,
+          type: loc.type
+        }))
+      });
+    }
+
+    console.log("Found location ID:", locationId, "for:", firstLocation.name);
+
+    // 2. Fetch hotels using locationId
+    const hotelResponse = await axios.get("https://engine.hotellook.com/api/v2/cache.json", {
+      params: {
+        locationId,
+        checkIn: check_in,
+        checkOut: check_out,
+        currency: currency || "USD",
+        adults: adults || 1,
+        children: children || 0,
+        rooms: rooms || 1,
+        token: process.env.HOTELLOOK_API_KEY,
+        limit: 10,
+      },
+    });
+
+    console.log("Hotels API response received, number of hotels:", hotelResponse.data.length);
+    
+    if (hotelResponse.data.length === 0) {
+      return res.json({
+        success: true,
+        hotels: [],
+        message: "No hotels found for the selected dates and location"
+      });
+    }
+    
+    // Enhance the hotel data with location information
+    const enhancedHotels = hotelResponse.data.map(hotel => ({
+      ...hotel,
+      locationId: locationId,
+      searchCity: city,
+      locationName: firstLocation.name,
+      country: firstLocation.countryName
+    }));
+    
+    res.json({ 
+      success: true, 
+      hotels: enhancedHotels,
+      locationInfo: {
+        id: locationId,
+        name: firstLocation.name,
+        country: firstLocation.countryName,
+        type: firstLocation.type
+      }
+    });
+  } catch (error) {
+    console.error("Hotels API error:", error.response?.data || error.message);
+    
+    // More specific error handling
+    if (error.response?.status === 401) {
+      return res.status(500).json({ 
+        success: false, 
+        error: "Hotel API authentication failed. Please check your API key."
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: "Hotel API request failed",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+
+
+
+
+
 // Helper function to create basic itinerary structure
 function createBasicItinerary(destination, startDate, duration, attractions) {
   const days = [];

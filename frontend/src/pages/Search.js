@@ -1,145 +1,216 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Plane, Building, Search, Calendar, MapPin, Users, Loader, ExternalLink } from 'lucide-react';
-import axios from 'axios';
+import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  Plane,
+  Building,
+  Search,
+  Calendar,
+  MapPin,
+  Users,
+  Loader,
+  ExternalLink,
+} from "lucide-react";
+import axios from "axios";
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('type') || 'flights');
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("type") || "flights"
+  );
+
   const [flightData, setFlightData] = useState({
-    origin: '',
-    destination: '',
-    departureDate: '',
-    returnDate: '',
-    passengers: '1'
+    origin: "",
+    destination: "",
+    departureDate: "",
+    returnDate: "",
+    passengers: "1",
   });
-  const [hotelData, setHotelData] = useState({
-    location: '',
-    checkIn: '',
-    checkOut: '',
-    guests: '2'
-  });
-  const [results, setResults] = useState(null);
+
+ const [hotelData, setHotelData] = useState({
+  location: "",
+  checkIn: "",
+  checkOut: "",
+  adults: "2",
+  children: "0",
+  rooms: "1",
+});
+
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
+  // Input handlers
   const handleFlightInputChange = (e) => {
-    setFlightData({
-      ...flightData,
-      [e.target.name]: e.target.value
-    });
+    setFlightData({ ...flightData, [e.target.name]: e.target.value });
   };
-
   const handleHotelInputChange = (e) => {
-    setHotelData({
-      ...hotelData,
-      [e.target.name]: e.target.value
-    });
+    setHotelData({ ...hotelData, [e.target.name]: e.target.value });
   };
 
+  // Fetch flights
   const searchFlights = async (e) => {
     e.preventDefault();
     if (!flightData.origin || !flightData.destination || !flightData.departureDate) {
-      setError('Please fill in all required fields');
+      setError("Please fill in all required fields");
       return;
     }
 
     setLoading(true);
-    setError('');
-    setResults(null);
+    setError("");
+    setResults([]);
 
     try {
-      const response = await axios.get('http://localhost:5000/api/flights', {
+      const response = await axios.get(`${API_BASE_URL}/api/flights`, {
         params: {
           origin: flightData.origin,
           destination: flightData.destination,
           departure_date: flightData.departureDate,
           return_date: flightData.returnDate || undefined,
-          currency: 'USD'
-        }
+          currency: "USD",
+        },
       });
 
-      setResults(response.data);
-    } catch (error) {
-      console.error('Flight search error:', error);
-      setError('Failed to search flights. Please make sure the backend server is running and try again.');
+      let data = response.data?.flights?.data || [];
+      if (typeof data === "object" && !Array.isArray(data)) {
+        data = Object.values(data);
+      }
+      setResults(data);
+    } catch (err) {
+      console.error("Flight search error:", err);
+      setError("Failed to search flights. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const searchHotels = async (e) => {
-    e.preventDefault();
-    if (!hotelData.location || !hotelData.checkIn || !hotelData.checkOut) {
-      setError('Please fill in all required fields');
+  // Fetch hotels
+const searchHotels = async (e) => {
+  e.preventDefault();
+  if (!hotelData.location || !hotelData.checkIn || !hotelData.checkOut) {
+    setError("Please fill in all required fields");
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+  setResults([]);
+
+  try {
+    console.log("Making hotel search request...");
+    const response = await axios.get(`${API_BASE_URL}/api/hotels`, {
+      params: {
+        city: hotelData.location,
+        check_in: hotelData.checkIn,
+        check_out: hotelData.checkOut,
+        currency: "USD",
+        adults: hotelData.adults,
+        children: hotelData.children,
+        rooms: hotelData.rooms,
+      },
+    });
+
+    console.log("Hotel API response:", response.data);
+
+    // Check if the response indicates success
+    if (!response.data.success) {
+      // Handle specific error cases with better messages
+      if (response.data.alternativeLocations) {
+        const alternatives = response.data.alternativeLocations.map(loc => 
+          `${loc.name} (${loc.country})`
+        ).join(', ');
+        setError(`${response.data.error} Try these alternatives: ${alternatives}`);
+      } else if (response.data.suggestions) {
+        setError(`${response.data.error} ${response.data.suggestions.join('. ')}`);
+      } else {
+        setError(response.data.error || "Hotel search failed");
+      }
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setResults(null);
-
-    try {
-      const response = await axios.get('http://localhost:5000/api/hotels', {
-        params: {
-          location: hotelData.location,
-          check_in: hotelData.checkIn,
-          check_out: hotelData.checkOut,
-          currency: 'USD'
-        }
-      });
-
-      setResults(response.data);
-    } catch (error) {
-      console.error('Hotel search error:', error);
-      setError('Failed to search hotels. Please make sure the backend server is running and try again.');
-    } finally {
-      setLoading(false);
+    let data = response.data?.hotels || [];
+    if (typeof data === "object" && !Array.isArray(data)) {
+      data = Object.values(data);
     }
-  };
-
-  const generateBookingLink = (result, type) => {
-    // Generate affiliate booking links (placeholder URLs)
-    if (type === 'flight') {
-      return `https://www.skyscanner.com/transport/flights/${flightData.origin}/${flightData.destination}/${flightData.departureDate}/?adults=${flightData.passengers}&children=0&adultsv2=${flightData.passengers}&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home`;
+    
+    if (data.length === 0) {
+      setError(response.data.message || "No hotels found for your search criteria. Try different dates or location.");
     } else {
-      return `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(hotelData.location)}&checkin=${hotelData.checkIn}&checkout=${hotelData.checkOut}&group_adults=${hotelData.guests}&no_rooms=1&group_children=0`;
+      setResults(data);
+      // Show success message with location info if available
+      if (response.data.locationInfo) {
+        console.log(`Found hotels in ${response.data.locationInfo.name}, ${response.data.locationInfo.country}`);
+      }
     }
-  };
+  } catch (err) {
+    console.error("Hotel search error:", err);
+    
+    if (err.response?.status === 404) {
+      if (err.response.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Location not found. Try using a major city name like 'Paris', 'London', or 'New York'");
+      }
+    } else if (err.response?.status === 500) {
+      setError("Server error. Please try again later.");
+    } else if (err.request) {
+      setError("Cannot connect to the server. Please check your internet connection.");
+    } else {
+      setError("An unexpected error occurred. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
-  return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Travel Search Engine
-          </h1>
-          <p className="text-xl text-gray-600">
-            Find the best deals on flights and hotels
-          </p>
-        </div>
 
+
+const generateBookingLink = (result, type) => {
+  if (type === "flight") {
+    return `https://www.aviasales.com/${result.origin}-${result.destination}/${result.departure_at}?adults=${flightData.passengers}`;
+  } else {
+    return `https://search.hotellook.com/?city=${encodeURIComponent(
+      hotelData.location
+    )}&checkIn=${hotelData.checkIn}&checkOut=${hotelData.checkOut}&adults=${
+      hotelData.adults
+    }&children=${hotelData.children}`;
+  }
+};
+
+return (
+  <div className="min-h-screen bg-background py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+          Travel Search Engine
+        </h1>
+        <p className="text-xl text-gray-600">
+          Find the best deals on flights and hotels
+        </p>
+      </div>
         {/* Tabs */}
         <div className="card mb-8">
           <div className="flex border-b">
             <button
-              onClick={() => setActiveTab('flights')}
+              onClick={() => setActiveTab("flights")}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                activeTab === 'flights'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-gray-600 hover:text-primary'
+                activeTab === "flights"
+                  ? "text-primary border-b-2 border-primary bg-primary/5"
+                  : "text-gray-600 hover:text-primary"
               }`}
             >
               <Plane className="inline h-5 w-5 mr-2" />
               Flights
             </button>
             <button
-              onClick={() => setActiveTab('hotels')}
+              onClick={() => setActiveTab("hotels")}
               className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                activeTab === 'hotels'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-gray-600 hover:text-primary'
+                activeTab === "hotels"
+                  ? "text-primary border-b-2 border-primary bg-primary/5"
+                  : "text-gray-600 hover:text-primary"
               }`}
             >
               <Building className="inline h-5 w-5 mr-2" />
@@ -148,7 +219,8 @@ const SearchPage = () => {
           </div>
 
           <div className="p-6">
-            {activeTab === 'flights' ? (
+            {/* Flight Form */}
+            {activeTab === "flights" && (
               <form onSubmit={searchFlights} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
@@ -161,7 +233,7 @@ const SearchPage = () => {
                       name="origin"
                       value={flightData.origin}
                       onChange={handleFlightInputChange}
-                      placeholder="e.g., NYC, London"
+                      placeholder="e.g., NYC"
                       className="input-field"
                       required
                     />
@@ -177,7 +249,7 @@ const SearchPage = () => {
                       name="destination"
                       value={flightData.destination}
                       onChange={handleFlightInputChange}
-                      placeholder="e.g., Paris, Tokyo"
+                      placeholder="e.g., Paris"
                       className="input-field"
                       required
                     />
@@ -225,11 +297,11 @@ const SearchPage = () => {
                       onChange={handleFlightInputChange}
                       className="input-field"
                     >
-                      <option value="1">1 Passenger</option>
-                      <option value="2">2 Passengers</option>
-                      <option value="3">3 Passengers</option>
-                      <option value="4">4 Passengers</option>
-                      <option value="5">5+ Passengers</option>
+                      {[...Array(5)].map((_, i) => (
+                        <option key={i} value={i + 1}>
+                          {i + 1} Passenger{i > 0 ? "s" : ""}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -252,100 +324,143 @@ const SearchPage = () => {
                   </button>
                 </div>
               </form>
-            ) : (
-              <form onSubmit={searchHotels} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <MapPin className="inline h-4 w-4 mr-1" />
-                      Destination *
-                    </label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={hotelData.location}
-                      onChange={handleHotelInputChange}
-                      placeholder="e.g., Paris, New York"
-                      className="input-field"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Calendar className="inline h-4 w-4 mr-1" />
-                      Check-in *
-                    </label>
-                    <input
-                      type="date"
-                      name="checkIn"
-                      value={hotelData.checkIn}
-                      onChange={handleHotelInputChange}
-                      className="input-field"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Calendar className="inline h-4 w-4 mr-1" />
-                      Check-out *
-                    </label>
-                    <input
-                      type="date"
-                      name="checkOut"
-                      value={hotelData.checkOut}
-                      onChange={handleHotelInputChange}
-                      className="input-field"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Users className="inline h-4 w-4 mr-1" />
-                      Guests
-                    </label>
-                    <select
-                      name="guests"
-                      value={hotelData.guests}
-                      onChange={handleHotelInputChange}
-                      className="input-field"
-                    >
-                      <option value="1">1 Guest</option>
-                      <option value="2">2 Guests</option>
-                      <option value="3">3 Guests</option>
-                      <option value="4">4 Guests</option>
-                      <option value="5">5+ Guests</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader className="h-5 w-5 animate-spin" />
-                        <span>Searching...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Search className="h-5 w-5" />
-                        <span>Search Hotels</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
             )}
+
+           {/* Hotel Form */}
+{activeTab === "hotels" && (
+  <form onSubmit={searchHotels} className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <MapPin className="inline h-4 w-4 mr-1" />
+          Destination *
+        </label>
+        <input
+          type="text"
+          name="location"
+          value={hotelData.location}
+          onChange={handleHotelInputChange}
+          placeholder="e.g., Paris"
+          className="input-field"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Calendar className="inline h-4 w-4 mr-1" />
+          Check-in *
+        </label>
+        <input
+          type="date"
+          name="checkIn"
+          value={hotelData.checkIn}
+          onChange={handleHotelInputChange}
+          className="input-field"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Calendar className="inline h-4 w-4 mr-1" />
+          Check-out *
+        </label>
+        <input
+          type="date"
+          name="checkOut"
+          value={hotelData.checkOut}
+          onChange={handleHotelInputChange}
+          className="input-field"
+          required
+        />
+      </div>
+
+      {/* Adults */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Users className="inline h-4 w-4 mr-1" />
+          Adults
+        </label>
+        <select
+          name="adults"
+          value={hotelData.adults}
+          onChange={handleHotelInputChange}
+          className="input-field"
+        >
+          {[...Array(5)].map((_, i) => (
+            <option key={i} value={i + 1}>
+              {i + 1} Adult{i > 0 ? "s" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Children */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Children
+        </label>
+        <select
+          name="children"
+          value={hotelData.children}
+          onChange={handleHotelInputChange}
+          className="input-field"
+        >
+          {[...Array(5)].map((_, i) => (
+            <option key={i} value={i}>
+              {i} Child{i > 1 ? "ren" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Rooms */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Rooms
+        </label>
+        <select
+          name="rooms"
+          value={hotelData.rooms}
+          onChange={handleHotelInputChange}
+          className="input-field"
+        >
+          {[...Array(5)].map((_, i) => (
+            <option key={i} value={i + 1}>
+              {i + 1} Room{i > 0 ? "s" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+
+    <div className="flex justify-end">
+      <button
+        type="submit"
+        disabled={loading}
+        className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+      >
+        {loading ? (
+          <>
+            <Loader className="h-5 w-5 animate-spin" />
+            <span>Searching...</span>
+          </>
+        ) : (
+          <>
+            <Search className="h-5 w-5" />
+            <span>Search Hotels</span>
+          </>
+        )}
+      </button>
+    </div>
+  </form>
+)}
+
           </div>
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
             <p className="text-red-600">{error}</p>
@@ -353,106 +468,76 @@ const SearchPage = () => {
         )}
 
         {/* Results */}
-        {results && (
+        {results.length > 0 && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Search Results
-              </h2>
-              <p className="text-gray-600">
-                {activeTab === 'flights' ? 'Flight' : 'Hotel'} options found
-              </p>
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Search Results</h2>
 
-            {/* Demo Results (since APIs might not return real data) */}
-            <div className="space-y-4">
-              {activeTab === 'flights' ? (
-                <div className="card p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <Plane className="h-8 w-8 text-primary" />
+            {activeTab === "flights"
+              ? results.map((flight, idx) => (
+                  <div key={idx} className="card p-6">
+                    <div className="flex justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {flightData.origin} → {flightData.destination}
+                          {flight.origin} → {flight.destination}
                         </h3>
                         <p className="text-gray-600">
-                          {new Date(flightData.departureDate).toLocaleDateString()}
+                          {flight.departure_at || "N/A"}
                         </p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">$299</p>
-                      <p className="text-sm text-gray-600">per person</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      <p>Departure: 08:30 AM</p>
-                      <p>Arrival: 02:45 PM</p>
-                      <p>Duration: 6h 15m</p>
-                    </div>
-                    <a
-                      href={generateBookingLink(null, 'flight')}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-accent flex items-center space-x-2"
-                    >
-                      <span>Book Now</span>
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="card p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <Building className="h-8 w-8 text-primary" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Grand Hotel {hotelData.location}
-                        </h3>
-                        <p className="text-gray-600">
-                          {new Date(hotelData.checkIn).toLocaleDateString()} - {new Date(hotelData.checkOut).toLocaleDateString()}
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          {flight.price} {flight.currency || "USD"}
                         </p>
+                        <a
+                          href={generateBookingLink(flight, "flight")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-accent flex items-center space-x-2 mt-2"
+                        >
+                          <span>Book Now</span>
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">$129</p>
-                      <p className="text-sm text-gray-600">per night</p>
-                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      <p>★★★★☆ 4.2/5 rating</p>
-                      <p>Free WiFi • Pool • Breakfast</p>
-                      <p>City Center Location</p>
-                    </div>
-                    <a
-                      href={generateBookingLink(null, 'hotel')}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-accent flex items-center space-x-2"
-                    >
-                      <span>Book Now</span>
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Additional demo results */}
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">
-                  This is a demo showing how search results would appear. 
-                  In a production environment, real data would be fetched from the APIs.
-                </p>
-                <p className="text-sm text-gray-500">
-                  The booking links will redirect to partner sites where you can complete your reservation.
-                </p>
-              </div>
-            </div>
+                ))
+              : results.map((hotel, idx) => {
+  // Extract hotel information with fallbacks for different API response structures
+  const hotelName = hotel.hotelName || hotel.name || hotel.hotel_name || "Hotel";
+  const price = hotel.price_from || hotel.priceAvg || hotel.price || "N/A";
+  const stars = hotel.stars || hotel.star_rating || "";
+  const address = hotel.address || hotel.location?.name || hotelData.location;
+  const currency = hotel.currency || "USD";
+  
+  return (
+    <div key={idx} className="card p-6">
+      <div className="flex justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {hotelName}
+          </h3>
+          <p className="text-gray-600">
+            {stars ? `${stars}★` : ""} – {address}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-primary">
+            {price} {currency}
+          </p>
+          <a
+            href={generateBookingLink(hotel, "hotel")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-accent flex items-center space-x-2 mt-2"
+          >
+            <span>Book Now</span>
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+})}
           </div>
         )}
       </div>
@@ -461,4 +546,3 @@ const SearchPage = () => {
 };
 
 export default SearchPage;
-
