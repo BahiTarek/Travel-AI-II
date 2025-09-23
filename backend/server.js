@@ -244,6 +244,7 @@ app.get('/api/weather/:location', async (req, res) => {
 });
 
 // Travelpayouts Flight Search endpoint
+// Travelpayouts Flight Search endpoint - FIXED VERSION
 app.get('/api/flights', async (req, res) => {
   try {
     const { origin, destination, departure_date, return_date, currency = 'USD' } = req.query;
@@ -257,14 +258,26 @@ app.get('/api/flights', async (req, res) => {
 
     const response = await axios.get('https://api.travelpayouts.com/aviasales/v3/prices_for_dates', {
       params: {
-        origin: origin,
-        destination: destination,
-        departure_date: departure_date,
-        return_date: return_date,
+        origin: origin.toUpperCase(),
+        destination: destination.toUpperCase(),
+        departure_at: departure_date, // FIXED: was departure_date, should be departure_at
+        return_at: return_date,       // FIXED: was return_date, should be return_at
         currency: currency,
-        token: process.env.TRAVELPAYOUTS_API_KEY
+        token: process.env.TRAVELPAYOUTS_API_KEY,
+        limit: 30,
+        sorting: 'price',
+        direct: false,
+        one_way: !return_date // Set one_way based on whether return date is provided
       }
     });
+
+    // Check if the API response indicates success
+    if (!response.data.success) {
+      return res.status(400).json({
+        success: false,
+        error: response.data.error || 'Flight search failed'
+      });
+    }
 
     res.json({
       success: true,
@@ -274,11 +287,11 @@ app.get('/api/flights', async (req, res) => {
     console.error('Travelpayouts API Error:', error.response?.data || error.message);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch flight data'
+      error: 'Failed to fetch flight data',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
-
 
 
 app.get("/api/hotels", async (req, res) => {

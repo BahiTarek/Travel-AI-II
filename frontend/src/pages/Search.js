@@ -58,40 +58,63 @@ const SearchPage = () => {
   };
 
   // Fetch flights
-  const searchFlights = async (e) => {
-    e.preventDefault();
-    if (!flightData.origin || !flightData.destination || !flightData.departureDate) {
-      setError("Please fill in all required fields");
+  // Fetch flights - UPDATED VERSION
+const searchFlights = async (e) => {
+  e.preventDefault();
+  if (!flightData.origin || !flightData.destination || !flightData.departureDate) {
+    setError("Please fill in all required fields");
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+  setResults([]);
+
+  try {
+    const response = await axios.get(getApiUrl('/api/flights'), {
+      params: {
+        origin: flightData.origin.toUpperCase(),
+        destination: flightData.destination.toUpperCase(),
+        departure_date: flightData.departureDate,
+        return_date: flightData.returnDate || undefined,
+        currency: "USD",
+      },
+    });
+
+    console.log("Flight API response:", response.data);
+
+    // Check if the response indicates success
+    if (!response.data.success) {
+      setError(response.data.error || "Flight search failed");
       return;
     }
 
-    setLoading(true);
-    setError("");
-    setResults([]);
-
-    try {
-      const response = await axios.get(getApiUrl('/api/flights'), {
-  params: {
-    origin: flightData.origin,
-    destination: flightData.destination,
-    departure_date: flightData.departureDate,
-    return_date: flightData.returnDate || undefined,
-    currency: "USD",
-  },
-});
-
-      let data = response.data?.flights?.data || [];
-      if (typeof data === "object" && !Array.isArray(data)) {
-        data = Object.values(data);
-      }
-      setResults(data);
-    } catch (err) {
-      console.error("Flight search error:", err);
-      setError("Failed to search flights. Please try again.");
-    } finally {
-      setLoading(false);
+    // Extract data from the correct response structure
+    let data = response.data.flights?.data || [];
+    if (typeof data === "object" && !Array.isArray(data)) {
+      data = Object.values(data);
     }
-  };
+    
+    if (data.length === 0) {
+      setError("No flights found for your search criteria. Try different dates or routes.");
+    } else {
+      setResults(data);
+    }
+  } catch (err) {
+    console.error("Flight search error:", err);
+    if (err.response?.data?.error) {
+      setError(err.response.data.error);
+    } else if (err.response?.status === 500) {
+      setError("Server error. Please try again later.");
+    } else if (err.request) {
+      setError("Cannot connect to the server. Please check your internet connection.");
+    } else {
+      setError("Failed to search flights. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Fetch hotels
 const searchHotels = async (e) => {
@@ -175,14 +198,36 @@ const searchHotels = async (e) => {
 
 
 const generateBookingLink = (result, type) => {
-  if (type === "flight") {
-    return `https://www.aviasales.com/${result.origin}-${result.destination}/${result.departure_at}?adults=${flightData.passengers}`;
+   if (type === "flight") {
+    // Clean and format the parameters
+    const origin = (result.origin || "").toUpperCase().trim();
+    const destination = (result.destination || "").toUpperCase().trim();
+    const departureDate = result.departure_at ? new Date(result.departure_at).toISOString().split('T')[0] : "";
+    
+    // Validate required parameters
+    if (!origin || !destination || !departureDate) {
+      console.error("Missing flight parameters:", { origin, destination, departureDate });
+      return "#"; // Fallback to prevent broken links
+    }
+
+    // Construct the Aviasales URL with proper formatting
+    return `https://www.aviasales.com/search/${origin}${departureDate.replace(/-/g, '')}${destination}1?adults=${flightData.passengers || 1}&currency=USD`;
+
   } else {
-    return `https://search.hotellook.com/?city=${encodeURIComponent(
-      hotelData.location
-    )}&checkIn=${hotelData.checkIn}&checkOut=${hotelData.checkOut}&adults=${
-      hotelData.adults
-    }&children=${hotelData.children}`;
+    // Try to get the hotel ID from different possible response structures
+    const hotelId = result.hotelId || result.id || result.hotel_id;
+    const hotelName = result.hotelName || result.name || result.hotel_name;
+    
+    if (hotelId) {
+      // If we have a hotel ID, create a direct deep link
+      return `https://search.hotellook.com/hotels?hotelId=${hotelId}&checkIn=${hotelData.checkIn}&checkOut=${hotelData.checkOut}&adults=${hotelData.adults}&children=${hotelData.children}`;
+    } else if (hotelName) {
+      // If no ID but we have a name, try to search for that specific hotel
+      return `https://search.hotellook.com/?city=${encodeURIComponent(hotelData.location)}&checkIn=${hotelData.checkIn}&checkOut=${hotelData.checkOut}&adults=${hotelData.adults}&children=${hotelData.children}&search=${encodeURIComponent(hotelName)}`;
+    } else {
+      // Fallback to generic search
+      return `https://search.hotellook.com/?city=${encodeURIComponent(hotelData.location)}&checkIn=${hotelData.checkIn}&checkOut=${hotelData.checkOut}&adults=${hotelData.adults}&children=${hotelData.children}`;
+    }
   }
 };
 
@@ -479,36 +524,39 @@ return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Search Results</h2>
 
-            {activeTab === "flights"
-              ? results.map((flight, idx) => (
-                  <div key={idx} className="card p-6">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {flight.origin} → {flight.destination}
-                        </h3>
-                        <p className="text-gray-600">
-                          {flight.departure_at || "N/A"}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          {flight.price} {flight.currency || "USD"}
-                        </p>
-                        <a
-                          href={generateBookingLink(flight, "flight")}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-accent flex items-center space-x-2 mt-2"
-                        >
-                          <span>Book Now</span>
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              : results.map((hotel, idx) => {
+            {activeTab === "flights" ? results.map((flight, idx) => (
+  <div key={idx} className="card p-6">
+    <div className="flex justify-between">
+      <div className="flex-1">
+        <h3 className="text-lg font-semibold text-gray-900">
+          {flight.origin} → {flight.destination}
+        </h3>
+        <div className="mt-2 space-y-1 text-sm text-gray-600">
+          <p><strong>Departure:</strong> {new Date(flight.departure_at).toLocaleDateString()} at {new Date(flight.departure_at).toLocaleTimeString()}</p>
+          {flight.return_at && (
+            <p><strong>Return:</strong> {new Date(flight.return_at).toLocaleDateString()} at {new Date(flight.return_at).toLocaleTimeString()}</p>
+          )}
+          <p><strong>Airline:</strong> {flight.airline} | <strong>Flight:</strong> {flight.flight_number}</p>
+          <p><strong>Transfers:</strong> {flight.transfers || 0} | <strong>Duration:</strong> {flight.duration} min</p>
+        </div>
+      </div>
+      <div className="text-right ml-4">
+        <p className="text-2xl font-bold text-primary">
+          ${flight.price} USD
+        </p>
+        <a
+          href={generateBookingLink(flight, "flight")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-accent flex items-center space-x-2 mt-2"
+        >
+          <span>Book Now</span>
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      </div>
+    </div>
+  </div>
+)) :  results.map((hotel, idx) => {
   // Extract hotel information with fallbacks for different API response structures
   const hotelName = hotel.hotelName || hotel.name || hotel.hotel_name || "Hotel";
   const price = hotel.price_from || hotel.priceAvg || hotel.price || "N/A";
